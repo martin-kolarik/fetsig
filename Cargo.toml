@@ -1,0 +1,57 @@
+[package]
+name = "fetsig"
+version = "0.1.0"
+edition = "2021"
+authors = ["martin.kolarik@smartcontrol.cz"]
+
+[features]
+default = ["browser", "json", "log", "postcard"]
+browser = [
+    "base64",
+    "bytes",
+    "futures-signals",
+    "futures-time",
+    "gloo-timers",
+    "js-sys",
+    "serde",
+    "ufmt",
+    "wasm-bindgen",
+    "wasm-bindgen-futures",
+    "web-sys",
+]
+json = ["serde_json"]
+log = ["dep:log"]
+postcard = ["dep:postcard"]
+tracing = ["dep:tracing"]
+
+[dependencies]
+base64 = { version = "^0.21", default-features = false, optional = true }
+bytes = { version = "^1.4", default-features = false, optional = true }
+futures-signals = { version = "^0.3", default-features = false, optional = true }
+futures-time = { version = "^3.0", default-features = false, optional = true }
+gloo-timers = { version = "^0.2", features = ["futures"], optional = true }
+js-sys = { version = "^0.3", optional = true }
+log = { version = "^0.4", default-features = false, optional = true }
+postcard = { version = "^1.0", optional = true }
+serde = { version = "^1.0", features = ["derive"], optional = true }
+serde_json = { version = "^1.0", optional = true }
+tracing = { version = "^0.1", default-features = false, optional = true }
+ufmt = { version = "^0.2", default-features = false, optional = true }
+wasm-bindgen = { version = "0.2.84", default-features = false, optional = true }
+wasm-bindgen-futures = { version = "^0.4", optional = true }
+web-sys = { version = "^0.3", features = [
+    "AbortController",
+    "AbortSignal",
+    "DomRect",
+    "Element",
+    "Headers",
+    "File",
+    "FileList",
+    "ScreenOrientation",
+    "RequestInit",
+    "Response",
+    "ResponseType",
+    "Screen",
+    "Storage",
+    "Window",
+], default-features = false, optional = true }
