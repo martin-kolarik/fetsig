@@ -2,13 +2,19 @@ use std::marker::PhantomData;
 
 use futures_signals::{
     map_ref,
-    signal::{Mutable, Signal},
-    signal_vec::{MutableSignalVec, MutableVec, MutableVecLockMut, MutableVecLockRef, SignalVec},
+    signal::{Mutable, Signal, SignalExt},
+    signal_vec::{
+        MutableSignalVec, MutableVec, MutableVecLockMut, MutableVecLockRef, SignalVec, SignalVecExt,
+    },
 };
+use futures_signals_ext::{MutableExt, MutableVecExt};
 use serde::{de::DeserializeOwned, Serialize};
 use wasm_bindgen_futures::spawn_local;
 
-use crate::{MacSign, MacVerify, MediaType, NoMac, StatusCode, HEADER_SIGNATURE};
+use crate::{
+    CollectionResponse, JSONSerialize, MacSign, MacVerify, MediaType, Messages, NoMac, Paging,
+    PostcardSerialize, StatusCode, HEADER_SIGNATURE,
+};
 
 use super::{
     common::{execute_fetch, PendingFetch},
@@ -20,21 +26,17 @@ use super::{
 #[derive(Debug)]
 pub struct CollectionStore<E, MV = NoMac> {
     transfer_state: Mutable<TransferState>,
-    messages: Mutable<Messages>,
+    messages: Messages,
     paging: Mutable<Paging>,
     collection: MutableVec<E>,
     pmv: PhantomData<MV>,
 }
 
-impl<E, MV> CollectionStore<E, MV>
-where
-    E: Clone + Serialize + DeserializeOwned,
-    MV: MacVerify,
-{
+impl<E, MV> CollectionStore<E, MV> {
     pub fn new_empty() -> Self {
         Self {
             transfer_state: Mutable::new(TransferState::Empty),
-            messages: Mutable::new(Messages::default()),
+            messages: Messages::new(),
             paging: Mutable::new(Paging::default()),
             collection: MutableVec::new_with_values(vec![]),
             pmv: PhantomData,
@@ -44,7 +46,7 @@ where
     pub fn new_value(collection: Vec<E>) -> Self {
         Self {
             transfer_state: Mutable::new(TransferState::Empty),
-            messages: Mutable::new(Messages::default()),
+            messages: Messages::new(),
             paging: Mutable::new(Paging::default()),
             collection: MutableVec::new_with_values(collection),
             pmv: PhantomData,
@@ -73,9 +75,13 @@ where
 
     fn init(&self, transfer_state: TransferState) {
         self.transfer_state.set_neq(transfer_state);
-        self.messages.set(Messages::default());
+        self.messages.clear_all();
         self.paging.set(Paging::default());
         self.reset();
+    }
+
+    pub fn reset(&self) {
+        self.collection.lock_mut().clear()
     }
 
     pub fn loaded(&self) -> bool {
@@ -128,24 +134,16 @@ where
             .dedupe()
     }
 
-    pub fn empty_signal(&self) -> impl Signal<Item = bool> {
-        self.collection.signal_vec_cloned().is_empty().dedupe()
+    pub fn collection(&self) -> &MutableVec<E> {
+        &self.collection
     }
 
-    pub fn collection_state_signal(&self) -> impl Signal<Item = CollectionState> {
-        collection_state_signal(self.pending_signal(), self.empty_signal())
-    }
-
-    pub fn messages(&self) -> &Mutable<Messages> {
+    pub fn messages(&self) -> &Messages {
         &self.messages
     }
 
     pub fn paging(&self) -> &Mutable<Paging> {
         &self.paging
-    }
-
-    pub fn collection(&self) -> &MutableVec<E> {
-        &self.collection
     }
 
     pub fn is_empty(&self) -> bool {
@@ -164,20 +162,6 @@ where
         F: Fn(&E) -> bool,
     {
         self.collection.lock_ref().iter().all(f)
-    }
-
-    pub fn find<F>(&self, f: F) -> Option<E>
-    where
-        F: Fn(&E) -> bool,
-    {
-        self.find_map(|e| f(e).then(|| e.clone()))
-    }
-
-    pub fn find_map<F, U>(&self, f: F) -> Option<U>
-    where
-        F: Fn(&E) -> Option<U>,
-    {
-        self.collection.lock_ref().iter().find_map(f)
     }
 
     pub fn lock_ref(&self) -> MutableVecLockRef<E> {
@@ -202,12 +186,11 @@ where
         f(self.collection.lock_mut())
     }
 
-    pub fn find_inspect_mut<P, F>(&self, predicate: P, f: F) -> Option<bool>
+    pub fn find_map<F, U>(&self, f: F) -> Option<U>
     where
-        P: FnMut(&E) -> bool,
-        F: FnMut(&mut E) -> bool,
+        F: Fn(&E) -> Option<U>,
     {
-        self.collection.find_inspect_mut(predicate, f)
+        self.collection.lock_ref().iter().find_map(f)
     }
 
     pub fn map<F, U>(&self, f: F) -> U
@@ -222,6 +205,45 @@ where
         F: FnOnce(MutableVecLockMut<E>) -> U,
     {
         f(self.collection.lock_mut())
+    }
+
+    pub fn remove<P>(&self, predicate: P)
+    where
+        P: FnMut(&E) -> bool,
+    {
+        self.collection.inspect_mut(|collection| {
+            if let Some(index) = collection.iter().position(predicate) {
+                collection.remove(index);
+            }
+        });
+    }
+}
+
+impl<E, MV> CollectionStore<E, MV>
+where
+    E: Clone,
+{
+    pub fn empty_signal(&self) -> impl Signal<Item = bool> {
+        self.collection.signal_vec_cloned().is_empty().dedupe()
+    }
+
+    pub fn collection_state_signal(&self) -> impl Signal<Item = CollectionState> {
+        collection_state_signal(self.pending_signal(), self.empty_signal())
+    }
+
+    pub fn find<F>(&self, f: F) -> Option<E>
+    where
+        F: Fn(&E) -> bool,
+    {
+        self.find_map(|e| f(e).then(|| e.clone()))
+    }
+
+    pub fn find_inspect_mut<P, F>(&self, predicate: P, f: F) -> Option<bool>
+    where
+        P: FnMut(&E) -> bool,
+        F: FnMut(&mut E) -> bool,
+    {
+        self.collection.find_inspect_mut_cloned(predicate, f)
     }
 
     pub fn get(&self) -> Vec<E> {
@@ -263,17 +285,6 @@ where
         });
     }
 
-    pub fn remove<P>(&self, predicate: P)
-    where
-        P: FnMut(&E) -> bool,
-    {
-        self.collection.inspect_mut(|collection| {
-            if let Some(index) = collection.iter().position(predicate) {
-                collection.remove(index);
-            }
-        });
-    }
-
     pub fn replace(&self, values: Vec<E>) -> Vec<E> {
         let mut collection = self.collection.lock_mut();
         let current = collection.drain(..).collect();
@@ -296,7 +307,7 @@ where
     where
         F: FnMut(&E) -> bool,
     {
-        self.collection.signal_vec_filter(f)
+        self.collection.signal_vec_filter_cloned(f)
     }
 
     pub fn signal_vec_filter_signal<F, U>(&self, f: F) -> impl SignalVec<Item = E>
@@ -304,7 +315,7 @@ where
         F: FnMut(&E) -> U,
         U: Signal<Item = bool>,
     {
-        self.collection.signal_vec_filter_signal(f)
+        self.collection.signal_vec_filter_signal_cloned(f)
     }
 
     pub fn signal_vec_map<F, U>(&self, f: F) -> impl SignalVec<Item = U>
@@ -328,11 +339,13 @@ where
     {
         self.collection.signal_vec_cloned().filter_map(f)
     }
+}
 
-    pub fn reset(&self) {
-        self.collection.lock_mut().clear()
-    }
-
+impl<E, MV> CollectionStore<E, MV>
+where
+    E: Serialize + DeserializeOwned,
+    MV: MacVerify,
+{
     pub fn load<C>(&self, request: Request<'_>, result_callback: C)
     where
         C: FnOnce(StatusCode) + 'static,
@@ -379,6 +392,7 @@ where
 
     pub fn store<MS, C>(&self, request: Request<'_>, result_callback: C)
     where
+        E: Clone,
         MS: MacSign,
         C: FnOnce(StatusCode) + 'static,
     {
@@ -399,16 +413,17 @@ where
             let collection = self.lock_ref();
             if !collection.is_empty() {
                 let media_type = match request.media_type() {
-                    Some(media_type @ MediaType::Json | media_type @ MediaType::Postcard) => {
-                        media_type
-                    }
+                    #[cfg(feature = "json")]
+                    Some(media_type @ MediaType::Json) => media_type,
+                    #[cfg(feature = "postcard")]
+                    Some(media_type @ MediaType::Postcard) => media_type,
                     _ => {
                         if request.logging() {
                             log::warn!("Request failed as unsupported media type is requested");
                         }
-                        *self.messages.lock_mut() = Messages::from_service_error(
+                        self.messages.replace(Messages::from_service_error(
                             "Request failed as unsupported media type is requested",
-                        );
+                        ));
                         self.transfer_state
                             .lock_mut()
                             .stop(StatusCode::UnsupportedMediaType);
@@ -418,7 +433,9 @@ where
 
                 let content = collection.to_vec();
                 let bytes = match media_type {
+                    #[cfg(feature = "json")]
                     MediaType::Json => content.to_json(),
+                    #[cfg(feature = "postcard")]
                     MediaType::Postcard => content.to_postcard(),
                     _ => {
                         if request.logging() {
@@ -450,12 +467,12 @@ where
 fn fetch<E, C, MV>(
     request: Request<'_>,
     transfer_state: Mutable<TransferState>,
-    messages: Mutable<Messages>,
+    messages: Messages,
     paging: Mutable<Paging>,
     collection: MutableVec<E>,
     result_callback: C,
 ) where
-    E: Clone + DeserializeOwned,
+    E: DeserializeOwned,
     C: FnOnce(StatusCode) + 'static,
     MV: MacVerify,
 {
@@ -502,7 +519,7 @@ async fn execute_collection_fetch<E, MV>(
     }: CollectionFetchContext<E>,
 ) -> StatusCode
 where
-    E: Entity + DeserializeOwned + 'static,
+    E: DeserializeOwned + 'static,
     MV: MacVerify,
 {
     let mut result = execute_fetch::<CollectionResponse<E>, MV>(pending_fetch).await;
@@ -539,8 +556,8 @@ where
         }
         (status, None) => status,
         (status, Some(response)) => {
-            let (response_messages, response_paging, response_entities) = response.take();
-            messages.set(Messages::with_transport(response_messages));
+            let (response_entities, response_messages, response_paging) = response.take();
+            messages.replace(response_messages);
             if let Some(entities) = response_entities {
                 if logging {
                     log::trace!("Request successfully fetched collection");
@@ -553,11 +570,7 @@ where
     }
 }
 
-impl<E, MV> Default for CollectionStore<E, MV>
-where
-    E: Entity + Serialize + DeserializeOwned + 'static,
-    MV: MacVerify,
-{
+impl<E, MV> Default for CollectionStore<E, MV> {
     fn default() -> Self {
         Self::new_empty()
     }
@@ -565,7 +578,7 @@ where
 
 struct CollectionFetchContext<E> {
     logging: bool,
-    messages: Mutable<Messages>,
+    messages: Messages,
     paging: Mutable<Paging>,
     collection: MutableVec<E>,
 }

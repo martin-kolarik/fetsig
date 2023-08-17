@@ -9,10 +9,11 @@ use wasm_bindgen::JsValue;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{Headers, RequestInit};
 
-use crate::{File, MediaType, HEADER_WANTS_RESPONSE};
+use crate::{MediaType, HEADER_WANTS_RESPONSE};
 
 use super::{
     common::{Abort, PendingFetch},
+    file::File,
     js_error,
 };
 
@@ -90,7 +91,7 @@ impl<'a> Request<'a> {
     }
 
     #[must_use]
-    pub fn with_header<S>(mut self, name: &'static str, value: impl ToString) -> Self {
+    pub fn with_header(mut self, name: &'static str, value: impl ToString) -> Self {
         let mut headers = self.headers.take().unwrap_or_default();
         headers.push((name, value.to_string()));
         self.headers = Some(headers);
@@ -106,7 +107,7 @@ impl<'a> Request<'a> {
     #[must_use]
     pub fn with_media_type(mut self, media_type: MediaType) -> Self {
         self.media_type = Some(media_type);
-        self.with_header(HEADER_CONTENT_TYPE, media_type.to_string())
+        self.with_header(HEADER_CONTENT_TYPE, media_type)
     }
 
     #[must_use]
@@ -133,13 +134,15 @@ impl<'a> Request<'a> {
         self
     }
 
+    #[cfg(feature = "json")]
     #[must_use]
     pub fn json(mut self) -> Self {
         self.wants_response = false;
         self.with_media_type(MediaType::Json)
-            .with_header(HEADER_ACCEPT, MediaType::Json.to_string())
+            .with_header(HEADER_ACCEPT, MediaType::Json)
     }
 
+    #[cfg(feature = "json")]
     #[must_use]
     pub fn json_with_response(mut self) -> Self {
         self.wants_response = true;
@@ -148,6 +151,7 @@ impl<'a> Request<'a> {
             .with_header(HEADER_WANTS_RESPONSE, "1")
     }
 
+    #[cfg(feature = "postcard")]
     #[must_use]
     pub fn postcard(mut self) -> Self {
         self.wants_response = false;
@@ -155,6 +159,7 @@ impl<'a> Request<'a> {
             .with_header(HEADER_ACCEPT, MediaType::Postcard.to_string())
     }
 
+    #[cfg(feature = "postcard")]
     #[must_use]
     pub fn postcard_with_response(mut self) -> Self {
         self.wants_response = true;

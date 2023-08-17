@@ -1,7 +1,8 @@
-use futures_signals::signal::{Mutable, Signal};
+use futures_signals::signal::{Mutable, Signal, SignalExt};
+use futures_signals_ext::{MutableExt, MutableOption};
 use serde::de::DeserializeOwned;
 
-use crate::{NoMac, StatusCode};
+use crate::{Messages, NoMac, StatusCode};
 
 use super::{fetch, request::Request, transferstate::TransferState};
 
@@ -55,12 +56,8 @@ impl UploadStore {
         self.transfer_state.signal_ref(|state| state.pending())
     }
 
-    pub fn store<C>(
-        &self,
-        request: Request<'_>,
-        response_messages: Mutable<Messages>,
-        result_callback: C,
-    ) where
+    pub fn store<C>(&self, request: Request<'_>, response_messages: Messages, result_callback: C)
+    where
         C: Fn(StatusCode) + 'static,
     {
         self.do_store::<String, _>(request, None, response_messages, result_callback)
@@ -70,10 +67,10 @@ impl UploadStore {
         &self,
         request: Request<'_>,
         response_entity: MutableOption<R>,
-        response_messages: Mutable<Messages>,
+        response_messages: Messages,
         result_callback: C,
     ) where
-        R: Entity + DeserializeOwned + 'static,
+        R: Clone + DeserializeOwned + 'static,
         C: Fn(StatusCode) + 'static,
     {
         self.do_store::<_, _>(
@@ -88,11 +85,11 @@ impl UploadStore {
         &self,
         request: Request<'_>,
         response_entity: Option<MutableOption<R>>,
-        response_messages: Mutable<Messages>,
+        response_messages: Messages,
         result_callback: C,
     ) where
         C: Fn(StatusCode) + 'static,
-        R: Entity + DeserializeOwned + 'static,
+        R: Clone + DeserializeOwned + 'static,
     {
         if request.logging() {
             log::debug!("Request to store {}", request.url());

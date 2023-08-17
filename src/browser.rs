@@ -13,6 +13,8 @@ pub use common::{decode_content, none};
 mod entity;
 pub use self::entity::*;
 
+mod file;
+
 mod mac;
 pub use mac::*;
 

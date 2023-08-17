@@ -70,6 +70,12 @@ impl From<String> for MediaType {
     }
 }
 
+impl ToString for MediaType {
+    fn to_string(&self) -> String {
+        AsRef::<str>::as_ref(self).into()
+    }
+}
+
 impl AsRef<str> for MediaType {
     fn as_ref(&self) -> &str {
         match self {
@@ -99,7 +105,7 @@ impl Serialize for MediaType {
     where
         S: serde::Serializer,
     {
-        serializer.serialize_str(self.into())
+        serializer.serialize_str(self.as_ref())
     }
 }
 

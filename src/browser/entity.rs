@@ -1,10 +1,16 @@
 use std::marker::PhantomData;
 
-use futures_signals::signal::{and, not, Mutable, MutableLockMut, MutableLockRef, Signal};
+use futures_signals::signal::{
+    and, not, Mutable, MutableLockMut, MutableLockRef, Signal, SignalExt,
+};
+use futures_signals_ext::{MutableExt, MutableOption};
 use serde::{de::DeserializeOwned, Serialize};
 use wasm_bindgen_futures::spawn_local;
 
-use crate::{MacSign, MacVerify, MediaType, NoMac, StatusCode, HEADER_SIGNATURE};
+use crate::{
+    Dirty, EntityResponse, Inner, JSONSerialize, MacSign, MacVerify, MediaType, Messages, NoMac,
+    PostcardSerialize, StatusCode, HEADER_SIGNATURE,
+};
 
 use super::{
     common::{execute_fetch, PendingFetch},
@@ -15,20 +21,16 @@ use super::{
 #[derive(Debug)]
 pub struct EntityStore<E, MV = NoMac> {
     transfer_state: Mutable<TransferState>,
-    messages: Mutable<Messages>,
+    messages: Messages,
     entity: MutableOption<E>,
     pmv: PhantomData<MV>,
 }
 
-impl<E, MV> EntityStore<E, MV>
-where
-    E: Clone + Serialize + DeserializeOwned,
-    MV: MacVerify,
-{
+impl<E, MV> EntityStore<E, MV> {
     pub fn new_empty() -> Self {
         Self {
             transfer_state: Mutable::new(TransferState::Empty),
-            messages: Mutable::new(Messages::default()),
+            messages: Messages::new(),
             entity: MutableOption::new_empty(),
             pmv: PhantomData,
         }
@@ -40,7 +42,7 @@ where
     {
         Self {
             transfer_state: Mutable::new(TransferState::Empty),
-            messages: Mutable::new(Messages::default()),
+            messages: Messages::new(),
             entity: MutableOption::new_default(),
             pmv: PhantomData,
         }
@@ -49,7 +51,7 @@ where
     pub fn new_value(entity: E) -> Self {
         Self {
             transfer_state: Mutable::new(TransferState::Empty),
-            messages: Mutable::new(Messages::default()),
+            messages: Messages::new(),
             entity: MutableOption::new_some_value(entity),
             pmv: PhantomData,
         }
@@ -57,7 +59,7 @@ where
 
     pub fn reset_to_empty(&self) {
         self.transfer_state.set(TransferState::Empty);
-        self.messages.set(Messages::default());
+        self.messages.clear_all();
         self.reset();
     }
 
@@ -66,23 +68,14 @@ where
         E: Default,
     {
         self.transfer_state.set(TransferState::Empty);
-        self.messages.set(Messages::default());
+        self.messages.clear_all();
         self.set(Some(E::default()));
     }
 
     pub fn reset_to_value(&self, entity: E) {
         self.transfer_state.set(TransferState::Empty);
-        self.messages.set(Messages::default());
+        self.messages.clear_all();
         self.set(Some(entity));
-    }
-
-    pub fn reset_to_inner<I>(&self, entity: I)
-    where
-        E: Inner<I>,
-    {
-        self.transfer_state.set(TransferState::Empty);
-        self.messages.set(Messages::default());
-        self.set(Some(E::from_inner(entity)));
     }
 
     pub fn empty(&self) -> bool {
@@ -167,6 +160,20 @@ where
             .dedupe()
     }
 
+    pub fn messages(&self) -> &Messages {
+        &self.messages
+    }
+
+    pub fn entity(&self) -> &MutableOption<E> {
+        &self.entity
+    }
+}
+
+impl<E, MV> EntityStore<E, MV>
+where
+    E: Clone + Serialize + DeserializeOwned,
+    MV: MacVerify,
+{
     pub fn dirty_signal(&self) -> impl Signal<Item = bool>
     where
         E: Dirty,
@@ -185,14 +192,6 @@ where
         E: Dirty,
     {
         and(self.dirty_signal(), not(self.messages_error_signal())).dedupe()
-    }
-
-    pub fn messages(&self) -> &Mutable<Messages> {
-        &self.messages
-    }
-
-    pub fn entity(&self) -> &MutableOption<E> {
-        &self.entity
     }
 
     #[inline]
@@ -351,7 +350,7 @@ where
 
     pub fn set_externally_loaded_inner<I>(&self, entity: Option<I>)
     where
-        E: PartialEq + Inner<I>,
+        E: Inner<I>,
     {
         self.set_externally_loaded(entity.map(E::from_inner));
     }
@@ -529,7 +528,7 @@ where
 fn store<E, R, C, MS, MV>(
     mut request: Request<'_>,
     transfer_state: Mutable<TransferState>,
-    messages: Mutable<Messages>,
+    messages: Messages,
     request_entity: MutableOption<E>,
     storage_entity: Option<MutableOption<R>>,
     result_callback: C,
@@ -556,14 +555,19 @@ fn store<E, R, C, MS, MV>(
     }
 
     let media_type = match request.media_type() {
-        Some(media_type @ MediaType::Json | media_type @ MediaType::Postcard) => media_type,
+        #[cfg(feature = "json")]
+        Some(media_type @ MediaType::Json) => media_type,
+        #[cfg(feature = "postcard")]
+        Some(media_type @ MediaType::Postcard) => media_type,
         _ => {
             if request.logging() {
                 log::warn!("Request failed as unsupported media type is requested");
             }
-            *messages.lock_mut() = Messages::from_service_error(
-                "Request failed as unsupported media type is requested",
-            );
+            messages
+                .lock_mut()
+                .replace_cloned(Messages::from_service_error(
+                    "Request failed as unsupported media type is requested",
+                ));
             transfer_state
                 .lock_mut()
                 .stop(StatusCode::UnsupportedMediaType);
@@ -581,7 +585,9 @@ fn store<E, R, C, MS, MV>(
                 }
                 return;
             }
+            #[cfg(feature = "json")]
             (Some(content), MediaType::Json) => content.to_json(),
+            #[cfg(feature = "postcard")]
             (Some(content), MediaType::Postcard) => content.to_postcard(),
             _ => {
                 if request.logging() {
@@ -610,7 +616,7 @@ fn store<E, R, C, MS, MV>(
 pub(super) fn fetch<R, C, MV>(
     request: Request<'_>,
     transfer_state: Mutable<TransferState>,
-    messages: Mutable<Messages>,
+    messages: Messages,
     storage_entity: Option<MutableOption<R>>,
     result_callback: C,
 ) where
@@ -659,7 +665,7 @@ async fn execute_entity_fetch<E, MV>(
     }: EntityFetchContext<E>,
 ) -> StatusCode
 where
-    E: Entity + DeserializeOwned,
+    E: Clone + DeserializeOwned,
     MV: MacVerify,
 {
     let mut result = execute_fetch::<EntityResponse<E>, MV>(pending_fetch).await;
@@ -696,7 +702,7 @@ where
         }
         (status, None) => status,
         (status, Some(response)) => {
-            let (response_messages, received_entity) = response.take();
+            let (received_entity, response_messages) = response.take();
             messages.set(Messages::with_transport(response_messages));
             if let (Some(entity), Some(response_entity)) = (received_entity, storage_entity) {
                 if logging {
@@ -709,11 +715,7 @@ where
     }
 }
 
-impl<E, MV> Default for EntityStore<E, MV>
-where
-    E: Entity + Serialize + DeserializeOwned + 'static,
-    MV: MacVerify,
-{
+impl<E, MV> Default for EntityStore<E, MV> {
     fn default() -> Self {
         Self::new_empty()
     }
@@ -721,19 +723,14 @@ where
 
 impl<E, MV> From<&EntityStore<E, MV>> for MutableOption<E>
 where
-    E: Entity + Serialize + DeserializeOwned + 'static,
-    MV: MacVerify,
+    E: Clone,
 {
     fn from(store: &EntityStore<E, MV>) -> Self {
         store.entity().clone()
     }
 }
 
-impl<E, MV> From<&EntityStore<E, MV>> for Mutable<Messages>
-where
-    E: Entity + Serialize + DeserializeOwned + 'static,
-    MV: MacVerify,
-{
+impl<E, MV> From<&EntityStore<E, MV>> for Messages {
     fn from(store: &EntityStore<E, MV>) -> Self {
         store.messages().clone()
     }
@@ -741,6 +738,6 @@ where
 
 struct EntityFetchContext<E> {
     logging: bool,
-    messages: Mutable<Messages>,
+    messages: Messages,
     storage_entity: Option<MutableOption<E>>,
 }

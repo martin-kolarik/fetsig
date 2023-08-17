@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use base64::engine::general_purpose;
+use base64::{engine::general_purpose, Engine};
 use futures_time::future::FutureExt;
 use gloo_timers::future::TimeoutFuture;
 use js_sys::{JsString, Uint8Array};
@@ -19,8 +19,20 @@ use crate::PostcardDeserialize;
 use super::js_error;
 pub fn none(_: StatusCode) {}
 
+#[cfg(all(feature = "json", feature = "postcard"))]
 pub trait FetchDeserializable: JSONDeserialize + PostcardDeserialize {}
+#[cfg(all(feature = "json", feature = "postcard"))]
 impl<F> FetchDeserializable for F where F: JSONDeserialize + PostcardDeserialize {}
+
+#[cfg(all(feature = "json", not(feature = "postcard")))]
+pub trait FetchDeserializable: JSONDeserialize {}
+#[cfg(all(feature = "json", not(feature = "postcard")))]
+impl<F> FetchDeserializable for F where F: JSONDeserialize {}
+
+#[cfg(all(not(feature = "json"), feature = "postcard"))]
+pub trait FetchDeserializable: PostcardDeserialize {}
+#[cfg(all(not(feature = "json"), feature = "postcard"))]
+impl<F> FetchDeserializable for F where F: PostcardDeserialize {}
 
 pub struct Abort {
     controller: AbortController,
@@ -66,7 +78,11 @@ impl PendingFetch {
     }
 
     pub async fn wait_completion(self) -> DecodedResponse<Response> {
-        let timeout = TimeoutFuture::new(self.timeout.unwrap_or_else(|| Duration::from_secs(900)));
+        let timeout = TimeoutFuture::new(
+            self.timeout
+                .unwrap_or_else(|| Duration::from_secs(900))
+                .as_millis() as u32,
+        );
         match self.request_future.timeout(timeout).await {
             Ok(Ok(response)) => {
                 let response = response.unchecked_into::<Response>();
@@ -220,8 +236,12 @@ where
     R: FetchDeserializable,
     MV: MacVerify,
 {
-    if !matches!(media_type, MediaType::Json | MediaType::Postcard) {
-        Err((StatusCode::UnsupportedMediaType, String::default()))?;
+    match media_type {
+        #[cfg(feature = "json")]
+        MediaType::Json => (),
+        #[cfg(feature = "postcard")]
+        MediaType::Postcard => (),
+        _ => Err((StatusCode::UnsupportedMediaType, String::default()))?,
     }
 
     let data = if content.is_string() {
@@ -264,7 +284,9 @@ where
     }
 
     match media_type {
+        #[cfg(feature = "json")]
         MediaType::Json => R::try_from_json(&data).map_err(|e| e.to_string()),
+        #[cfg(feature = "postcard")]
         MediaType::Postcard => R::try_from_postcard(&data).map_err(|e| e.to_string()),
         _ => {
             return Err((
