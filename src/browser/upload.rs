@@ -1,6 +1,10 @@
 use futures_signals::signal::{Mutable, Signal, SignalExt};
 use futures_signals_ext::{MutableExt, MutableOption};
+#[cfg(feature = "log")]
+use log::debug;
 use serde::de::DeserializeOwned;
+#[cfg(feature = "tracing")]
+use tracing::debug;
 
 use crate::{Messages, NoMac, StatusCode};
 
@@ -92,7 +96,7 @@ impl UploadStore {
         R: Clone + DeserializeOwned + 'static,
     {
         if request.logging() {
-            log::debug!("Request to store {}", request.url());
+            debug!("Request to store {}", request.url());
         }
         fetch::<_, _, NoMac>(
             request,

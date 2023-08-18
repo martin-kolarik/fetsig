@@ -1,4 +1,4 @@
-use std::error::Error;
+use js_sys::Error;
 use wasm_bindgen::JsValue;
 
 mod collection;

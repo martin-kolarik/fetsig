@@ -4,7 +4,11 @@ use futures_signals::signal::{
     and, not, Mutable, MutableLockMut, MutableLockRef, Signal, SignalExt,
 };
 use futures_signals_ext::{MutableExt, MutableOption};
+#[cfg(feature = "log")]
+use log::{debug, error, trace, warn};
 use serde::{de::DeserializeOwned, Serialize};
+#[cfg(feature = "tracing")]
+use tracing::{debug, error, trace, warn};
 use wasm_bindgen_futures::spawn_local;
 
 use crate::{
@@ -160,20 +164,14 @@ impl<E, MV> EntityStore<E, MV> {
             .dedupe()
     }
 
+    pub fn entity(&self) -> &MutableOption<E> {
+        &self.entity
+    }
+
     pub fn messages(&self) -> &Messages {
         &self.messages
     }
 
-    pub fn entity(&self) -> &MutableOption<E> {
-        &self.entity
-    }
-}
-
-impl<E, MV> EntityStore<E, MV>
-where
-    E: Clone + Serialize + DeserializeOwned,
-    MV: MacVerify,
-{
     pub fn dirty_signal(&self) -> impl Signal<Item = bool>
     where
         E: Dirty,
@@ -184,7 +182,7 @@ where
     }
 
     pub fn messages_error_signal(&self) -> impl Signal<Item = bool> {
-        self.messages.signal_ref(Messages::is_error).dedupe()
+        self.messages.error_signal()
     }
 
     pub fn can_commit_signal(&self) -> impl Signal<Item = bool>
@@ -314,7 +312,17 @@ where
         self.entity.lock_ref().as_ref().and_then(f)
     }
 
-    pub fn get(&self) -> Option<E> {
+    pub fn get(&self) -> Option<E>
+    where
+        E: Copy,
+    {
+        self.entity.get()
+    }
+
+    pub fn get_cloned(&self) -> Option<E>
+    where
+        E: Clone,
+    {
         self.entity.get_cloned()
     }
 
@@ -362,17 +370,23 @@ where
     pub fn replace(&self, entity: Option<E>) -> Option<E> {
         self.entity.replace(entity)
     }
+}
 
+impl<E, MV> EntityStore<E, MV>
+where
+    MV: MacVerify,
+{
     pub fn load<C>(&self, request: Request<'_>, result_callback: C)
     where
+        E: Clone + DeserializeOwned + 'static,
         C: FnOnce(StatusCode) + 'static,
     {
         if self.transfer_state.map(TransferState::loaded) {
             if request.logging() {
-                log::debug!("Request to load {} skipped, using cache", request.url());
+                debug!("Request to load {} skipped, using cache", request.url());
 
                 if !request.method().is_load() {
-                    log::warn!(
+                    warn!(
                         "Load request unexpectedly uses store verb {:?}",
                         request.method().as_str()
                     );
@@ -385,13 +399,14 @@ where
 
     pub fn load_skip_cache<C>(&self, request: Request<'_>, result_callback: C)
     where
+        E: Clone + DeserializeOwned + 'static,
         C: FnOnce(StatusCode) + 'static,
     {
         if request.logging() {
-            log::debug!("Request to load {}", request.url());
+            debug!("Request to load {}", request.url());
 
             if !request.method().is_load() {
-                log::warn!(
+                warn!(
                     "Load request unexpectedly uses store verb {:?}",
                     request.method().as_str()
                 );
@@ -413,8 +428,9 @@ where
         request_entity: MutableOption<R>,
         result_callback: C,
     ) where
+        E: Clone + DeserializeOwned + 'static,
         MS: MacSign,
-        R: Clone + Serialize + DeserializeOwned,
+        R: Clone + Serialize,
         C: FnOnce(StatusCode) + 'static,
     {
         store::<_, _, _, MS, MV>(
@@ -432,10 +448,10 @@ where
         C: FnOnce(StatusCode) + 'static,
     {
         if request.logging() {
-            log::debug!("Request to execute {}", request.url());
+            debug!("Request to execute {}", request.url());
 
             if request.method().is_load() {
-                log::warn!(
+                warn!(
                     "Execute request unexpectedly uses load verb {:?}",
                     request.method().as_str()
                 );
@@ -457,21 +473,21 @@ where
         response_entity: MutableOption<R>,
         result_callback: C,
     ) where
-        R: Clone + Serialize + DeserializeOwned,
+        R: Clone + DeserializeOwned + 'static,
         C: FnOnce(StatusCode) + 'static,
     {
         if request.logging() {
-            log::debug!("Request to execute {}", request.url());
+            debug!("Request to execute {}", request.url());
 
             if request.method().is_load() {
-                log::warn!(
+                warn!(
                     "Execute request unexpectedly uses load verb {:?}",
                     request.method().as_str()
                 );
             }
 
             if !request.wants_response() {
-                log::warn!("Execute expects response, but request does not",);
+                warn!("Execute expects response, but request does not",);
             }
         }
 
@@ -486,6 +502,7 @@ where
 
     pub fn store<MS, C>(&self, request: Request<'_>, result_callback: C)
     where
+        E: Clone + Serialize + DeserializeOwned + 'static,
         MS: MacSign,
         C: FnOnce(StatusCode) + 'static,
     {
@@ -510,8 +527,9 @@ where
         response_entity: MutableOption<R>,
         result_callback: C,
     ) where
+        E: Serialize,
         MS: MacSign,
-        R: Clone + Serialize + DeserializeOwned,
+        R: Clone + DeserializeOwned + 'static,
         C: FnOnce(StatusCode) + 'static,
     {
         store::<_, _, _, MS, MV>(
@@ -534,23 +552,23 @@ fn store<E, R, C, MS, MV>(
     result_callback: C,
 ) where
     E: Serialize,
-    R: DeserializeOwned + 'static,
+    R: Clone + DeserializeOwned + 'static,
     C: FnOnce(StatusCode) + 'static,
     MS: MacSign,
     MV: MacVerify,
 {
     if request.logging() {
-        log::debug!("Request to store {}", request.url());
+        debug!("Request to store {}", request.url());
 
         if request.method().is_load() {
-            log::warn!(
+            warn!(
                 "Store request unexpectedly uses load verb {:?}",
                 request.method().as_str()
             );
         }
 
         if storage_entity.is_none() && request.wants_response() {
-            log::warn!("Store request wants response but defines no response entity",);
+            warn!("Store request wants response but defines no response entity",);
         }
     }
 
@@ -561,13 +579,11 @@ fn store<E, R, C, MS, MV>(
         Some(media_type @ MediaType::Postcard) => media_type,
         _ => {
             if request.logging() {
-                log::warn!("Request failed as unsupported media type is requested");
+                warn!("Request failed as unsupported media type is requested");
             }
-            messages
-                .lock_mut()
-                .replace_cloned(Messages::from_service_error(
-                    "Request failed as unsupported media type is requested",
-                ));
+            messages.replace(Messages::from_service_error(
+                "Request failed as unsupported media type is requested",
+            ));
             transfer_state
                 .lock_mut()
                 .stop(StatusCode::UnsupportedMediaType);
@@ -581,7 +597,7 @@ fn store<E, R, C, MS, MV>(
         let bytes = match (&*content, media_type) {
             (None, _) => {
                 if request.logging() {
-                    log::error!("Cannot store nonexisting entity, unexpected code flow");
+                    error!("Cannot store nonexisting entity, unexpected code flow");
                 }
                 return;
             }
@@ -591,7 +607,7 @@ fn store<E, R, C, MS, MV>(
             (Some(content), MediaType::Postcard) => content.to_postcard(),
             _ => {
                 if request.logging() {
-                    log::error!("Unsupported media type requested, unexpected code flow");
+                    error!("Unsupported media type requested, unexpected code flow");
                 }
                 return;
             }
@@ -621,7 +637,7 @@ pub(super) fn fetch<R, C, MV>(
     result_callback: C,
 ) where
     C: FnOnce(StatusCode) + 'static,
-    R: DeserializeOwned,
+    R: Clone + DeserializeOwned + 'static,
     MV: MacVerify,
 {
     let logging = request.logging();
@@ -630,7 +646,7 @@ pub(super) fn fetch<R, C, MV>(
         Ok(future) => future,
         Err(error) => {
             if logging {
-                log::debug!("Request failed at init, error: {}", error);
+                debug!("Request failed at init, error: {}", error);
             }
             result_callback(StatusCode::BadRequest);
             transfer_state.lock_mut().stop(StatusCode::FetchFailed);
@@ -673,7 +689,7 @@ where
         (status @ StatusCode::FetchTimeout, _) => {
             if logging {
                 // TODO: should this warning go also to Messages???
-                log::debug!(
+                debug!(
                     "Timeout accessing {}.",
                     result.hint().unwrap_or("?unknown url")
                 );
@@ -683,7 +699,7 @@ where
         (status @ StatusCode::FetchFailed, _) => {
             if logging {
                 // TODO: should this warning go also to Messages???
-                log::debug!(
+                debug!(
                     "Request failed in execution, error: {}",
                     result.hint().unwrap_or("?unknown")
                 );
@@ -693,7 +709,7 @@ where
         (status @ StatusCode::DecodeFailed, _) => {
             if logging {
                 // TODO: should this warning go also to Messages???
-                log::warn!(
+                warn!(
                     "Response decoding failed, error: {}",
                     result.hint().unwrap_or("?unknown")
                 );
@@ -703,10 +719,10 @@ where
         (status, None) => status,
         (status, Some(response)) => {
             let (received_entity, response_messages) = response.take();
-            messages.set(Messages::with_transport(response_messages));
+            messages.replace(response_messages);
             if let (Some(entity), Some(response_entity)) = (received_entity, storage_entity) {
                 if logging {
-                    log::trace!("Request successfully loaded entity");
+                    trace!("Request successfully loaded entity");
                 }
                 response_entity.set(Some(entity));
             }

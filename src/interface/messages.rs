@@ -3,7 +3,11 @@ use std::{
     ops::Deref,
 };
 
-use futures_signals::{signal_map::MutableBTreeMap, signal_vec::MutableVec};
+use futures_signals::{
+    signal::{Mutable, Signal, SignalExt},
+    signal_map::MutableBTreeMap,
+    signal_vec::MutableVec,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -30,7 +34,11 @@ impl Message {
 }
 
 #[derive(Default, Clone, Serialize, Deserialize)]
-pub struct Messages(MutableBTreeMap<String, MutableVec<Message>>);
+pub struct Messages {
+    #[serde(skip)]
+    error: Mutable<bool>,
+    messages: MutableBTreeMap<String, MutableVec<Message>>,
+}
 
 impl From<&str> for Messages {
     fn from(message: &str) -> Self {
@@ -40,19 +48,22 @@ impl From<&str> for Messages {
 
 impl Debug for Messages {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        let formatted = self
-            .0
-            .iter()
-            .fold(String::new(), |mut output, (key, item)| {
-                if let Some(ref error) = item.error {
-                    output = output + key + ".errors: [\n  " + &error.join(",\n  ") + "\n]\n";
+        for (index, (key, messages)) in self.messages.lock_ref().iter().enumerate() {
+            if index > 0 {
+                f.write_str(", ")?;
+            }
+            f.write_str(key)?;
+            f.write_str(": [")?;
+            for (index, message) in messages.lock_ref().iter().enumerate() {
+                if index > 0 {
+                    f.write_str(", ")?;
                 }
-                if let Some(ref info) = item.info {
-                    output = output + key + ".infos: [\n  " + &info.join(",\n  ") + "\n]\n";
-                }
-                output
-            });
-        f.write_str(&formatted)
+                f.write_str(if message.error { "E: " } else { "I: " })?;
+                f.write_str(message.text())?;
+            }
+            f.write_str("]")?;
+        }
+        Ok(())
     }
 }
 
@@ -69,15 +80,19 @@ impl Messages {
     pub const ENTITY: &'static str = "entity";
 
     pub fn new() -> Messages {
-        Self(MutableBTreeMap::new())
+        Self {
+            error: Mutable::new(false),
+            messages: MutableBTreeMap::new(),
+        }
     }
 
     pub fn replace(&self, with: Messages) {
-        self.lock_mut().clone_from(&with.lock_ref());
+        self.lock_mut().replace_cloned(with.lock_mut().clone());
+        self.error.set_neq(Self::evaluate_error(&self.messages));
     }
 
     #[must_use]
-    fn with<K, M>(mut self, key: K, error: bool, message: M) -> Self
+    fn with<K, M>(self, key: K, error: bool, message: M) -> Self
     where
         K: ToString,
         M: ToString,
@@ -87,14 +102,23 @@ impl Messages {
     }
 
     pub fn error(&self) -> bool {
-        self.0
+        Self::evaluate_error(&self.messages)
+    }
+
+    fn evaluate_error(messages: &MutableBTreeMap<String, MutableVec<Message>>) -> bool {
+        messages
             .lock_ref()
             .values()
-            .any(|value| value.lock_ref().iter().any(Message::error))
+            .any(|messages| messages.lock_ref().iter().any(Message::error))
+    }
+
+    pub fn error_signal(&self) -> impl Signal<Item = bool> {
+        self.error.signal().dedupe()
     }
 
     pub fn clear_all(&self) {
-        self.0.lock_mut().clear();
+        self.messages.lock_mut().clear();
+        self.error.set_neq(false);
     }
 
     pub fn set<K, M>(&self, key: K, error: bool, message: M)
@@ -102,10 +126,11 @@ impl Messages {
         K: ToString,
         M: ToString,
     {
-        self.0.lock_mut().insert(
+        self.messages.lock_mut().insert_cloned(
             key.to_string(),
             MutableVec::new_with_values(vec![Message::new(error, message.to_string())]),
         );
+        self.error.set_neq(error);
     }
 
     pub fn add<K, M>(&self, key: K, error: bool, message: M)
@@ -113,19 +138,23 @@ impl Messages {
         K: ToString,
         M: ToString,
     {
-        self.0
-            .lock_mut()
-            .entry(key.to_string())
-            .or_insert(MutableVec::new())
-            .lock_mut()
-            .push_cloned(Message::new(error, message.to_string()));
+        let key = key.to_string();
+        let message = Message::new(error, message.to_string());
+        let mut lock = self.messages.lock_mut();
+        if let Some(messages) = lock.get(&key) {
+            messages.lock_mut().push_cloned(message);
+        } else {
+            lock.insert_cloned(key, MutableVec::new_with_values(vec![message]));
+        }
+        self.error.set_neq(self.error.get() || error);
     }
 
     pub fn clear<K>(&self, key: K)
     where
-        K: AsRef<str>,
+        K: ToString,
     {
-        self.0.lock_mut().remove_entry(key.as_ref());
+        self.messages.lock_mut().remove(&key.to_string());
+        Self::evaluate_error(&self.messages);
     }
 
     pub fn add_entity_error(&self, message: impl ToString) {
@@ -176,51 +205,45 @@ mod tests {
     fn object_is_created_from_entity_error() {
         let messages = Messages::from_entity_error("EE");
         assert!(messages.error());
-        assert_eq!("entity.errors: [\n  EE\n]\n", format!("{messages:?}"));
+        assert_eq!("entity: [E: EE]", format!("{messages:?}"));
     }
 
     #[test]
     fn object_is_created_from_service_error() {
         let messages = Messages::from_service_error("SE");
         assert!(messages.error());
-        assert_eq!("service.errors: [\n  SE\n]\n", format!("{messages:?}"));
+        assert_eq!("service: [E: SE]", format!("{messages:?}"));
     }
 
     #[test]
     fn add_service_info_works() {
-        let mut messages = Messages::from_entity_error("EE");
+        let messages = Messages::from_entity_error("EE");
         messages.add_service_info("SI");
         let output = format!("{messages:?}");
-        assert!(
-            "service.infos: [\n  SI\n]\nentity.errors: [\n  EE\n]\n" == output
-                || "entity.errors: [\n  EE\n]\nservice.infos: [\n  SI\n]\n" == output
-        );
+        assert_eq!("entity: [E: EE], service: [I: SI]", output);
     }
 
     #[test]
     fn add_service_error_works() {
-        let mut messages = Messages::from_service_error("SE");
+        let messages = Messages::from_service_error("SE");
         messages.add_service_error("SE");
         let output = format!("{messages:?}");
-        assert_eq!("service.errors: [\n  SE,\n  SE\n]\n", output);
+        assert_eq!("service: [E: SE, E: SE]", output);
     }
 
     #[test]
     fn add_entity_info_works() {
-        let mut messages = Messages::from_entity_error("EE");
+        let messages = Messages::from_entity_error("EE");
         messages.add_entity_info("EI");
         let output = format!("{messages:?}");
-        assert!(
-            "entity.infos: [\n  EI\n]\nentity.errors: [\n  EE\n]\n" == output
-                || "entity.errors: [\n  EE\n]\nentity.infos: [\n  EI\n]\n" == output
-        );
+        assert_eq!("entity: [E: EE, I: EI]", output);
     }
 
     #[test]
     fn add_entity_error_works() {
-        let mut messages = Messages::from_entity_error("EE");
+        let messages = Messages::from_entity_error("EE");
         messages.add_entity_error("EE");
         let output = format!("{messages:?}");
-        assert_eq!("entity.errors: [\n  EE,\n  EE\n]\n", output);
+        assert_eq!("entity: [E: EE, E: EE]", output);
     }
 }
