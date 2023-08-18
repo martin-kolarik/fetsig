@@ -1,6 +1,5 @@
 use serde::{Deserialize, Deserializer, Serialize};
-
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum MediaType {
     #[default]
     ByteStream,
@@ -13,11 +12,14 @@ pub enum MediaType {
     Javascript,
     Jpeg,
     Json,
+    Pdf,
     Plain,
     Png,
     Postcard,
+    Pwg,
     Sse,
     Svg,
+    Urf,
     Wasm,
     Xml,
 }
@@ -32,11 +34,14 @@ const ICO: &str = "image/x-icon";
 const JAVASCRIPT: &str = "application/javascript";
 const JPEG: &str = "image/jpeg";
 const JSON: &str = "application/json";
+const PDF: &str = "application/pdf";
 const PLAIN: &str = "text/plain";
 const PNG: &str = "image/png";
 const POSTCARD: &str = "application/x-postcard";
+const PWG: &str = "image/pwg-raster";
 const SSE: &str = "text/event-stream";
 const SVG: &str = "image/svg+xml";
+const URF: &str = "image/urf";
 const WASM: &str = "application/wasm";
 const XML: &str = "application/xml";
 
@@ -53,10 +58,13 @@ impl From<&str> for MediaType {
             JAVASCRIPT => Self::Javascript,
             JPEG => Self::Jpeg,
             JSON => Self::Json,
+            PDF => Self::Pdf,
             PNG => Self::Png,
             POSTCARD => Self::Postcard,
+            PWG => Self::Pwg,
             SSE => Self::Sse,
             SVG => Self::Svg,
+            URF => Self::Urf,
             WASM => Self::Wasm,
             XML => Self::Xml,
             _ => Self::default(),
@@ -89,11 +97,14 @@ impl AsRef<str> for MediaType {
             MediaType::Javascript => JAVASCRIPT,
             MediaType::Jpeg => JPEG,
             MediaType::Json => JSON,
+            MediaType::Pdf => PDF,
             MediaType::Plain => PLAIN,
             MediaType::Png => PNG,
             MediaType::Postcard => POSTCARD,
+            MediaType::Pwg => PWG,
             MediaType::Sse => SSE,
             MediaType::Svg => SVG,
+            MediaType::Urf => URF,
             MediaType::Wasm => WASM,
             MediaType::Xml => XML,
         }

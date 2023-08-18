@@ -315,7 +315,7 @@ dependencies = [
 
 [[package]]
 name = "fetsig"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "base64 0.21.2",
  "bytes",
