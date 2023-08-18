@@ -1,8 +1,12 @@
 [package]
 name = "fetsig"
 version = "0.1.1"
-edition = "2021"
 authors = ["martin.kolarik@smartcontrol.cz"]
+description = "Web-sys based browser fetch library using futures-signals with optional MAC."
+edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/martin-kolarik/fetsig"
+homepage = "https://github.com/martin-kolarik/fetsig"
 
 [features]
 default = ["browser", "json", "log", "postcard"]
