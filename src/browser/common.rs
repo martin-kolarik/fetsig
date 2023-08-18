@@ -34,6 +34,9 @@ pub trait FetchDeserializable: PostcardDeserialize {}
 #[cfg(all(not(feature = "json"), feature = "postcard"))]
 impl<F> FetchDeserializable for F where F: PostcardDeserialize {}
 
+#[cfg(all(not(feature = "json"), not(feature = "postcard")))]
+pub trait FetchDeserializable {}
+
 pub struct Abort {
     controller: AbortController,
 }

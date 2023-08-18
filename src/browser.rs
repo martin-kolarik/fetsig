@@ -29,13 +29,3 @@ pub use upload::*;
 fn js_error(value: impl Into<JsValue>) -> String {
     Error::from(value.into()).to_string().into()
 }
-
-#[macro_export]
-macro_rules! uformat {
-    ($($arg:tt)*) => {{
-        use ufmt;
-        let mut text = String::new();
-        ufmt::uwrite!(&mut text, $($arg)*).unwrap();
-        text
-    }}
-}

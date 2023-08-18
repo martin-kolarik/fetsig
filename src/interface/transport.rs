@@ -1,10 +1,13 @@
 use serde::{Deserialize, Serialize};
-#[cfg(not(feature = "postcard"))]
+#[cfg(all(feature = "json", not(feature = "postcard")))]
 use serde_with::skip_serializing_none;
 
 use crate::Messages;
 
-#[cfg_attr(not(feature = "postcard"), skip_serializing_none)]
+#[cfg_attr(
+    all(feature = "json", not(feature = "postcard")),
+    skip_serializing_none
+)]
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct EntityResponse<E> {
     messages: Messages,
@@ -38,7 +41,10 @@ impl<E> EntityResponse<E> {
     }
 }
 
-#[cfg_attr(not(feature = "postcard"), skip_serializing_none)]
+#[cfg_attr(
+    all(feature = "json", not(feature = "postcard")),
+    skip_serializing_none
+)]
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct CollectionResponse<E> {
     messages: Messages,
@@ -72,7 +78,10 @@ impl<E> CollectionResponse<E> {
     }
 }
 
-#[cfg_attr(not(feature = "postcard"), skip_serializing_none)]
+#[cfg_attr(
+    all(feature = "json", not(feature = "postcard")),
+    skip_serializing_none
+)]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Paging {
     limit: usize,

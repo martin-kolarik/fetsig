@@ -1,6 +1,6 @@
 [package]
 name = "fetsig"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["martin.kolarik@smartcontrol.cz"]
 description = "Web-sys based browser fetch library using futures-signals with optional MAC."
 edition = "2021"
@@ -13,20 +13,18 @@ default = ["browser", "json", "log", "postcard"]
 browser = [
     "base64",
     "bytes",
-    "futures-signals",
     "futures-signals-ext",
     "futures-time",
     "gloo-timers",
     "js-sys",
-    "serde",
     "ufmt",
     "wasm-bindgen",
     "wasm-bindgen-futures",
     "web-sys",
 ]
-json = ["serde_json", "serde_with"]
+json = ["bytes", "serde_json", "serde_with", "ufmt"]
 log = ["dep:log"]
-postcard = ["dep:postcard"]
+postcard = ["bytes", "dep:postcard", "ufmt"]
 tracing = ["dep:tracing"]
 
 [dependencies]
@@ -38,7 +36,7 @@ bytes = { version = "^1.4", default-features = false, features = [
 ], optional = true }
 futures-signals = { version = "^0.3", default-features = false, features = [
     "serde",
-], optional = true }
+] }
 futures-signals-ext = { version = "^0.1", default-features = false, features = [
     "option",
     "spawn-local",
@@ -48,7 +46,7 @@ gloo-timers = { version = "^0.2", features = ["futures"], optional = true }
 js-sys = { version = "^0.3", optional = true }
 log = { version = "^0.4", default-features = false, optional = true }
 postcard = { version = "^1.0", optional = true }
-serde = { version = "^1.0", features = ["derive"], optional = true }
+serde = { version = "^1.0", features = ["derive"] }
 serde_json = { version = "^1.0", optional = true }
 serde_with = { version = "^2.2", optional = true }
 tracing = { version = "^0.1", default-features = false, optional = true }

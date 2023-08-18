@@ -11,9 +11,14 @@ use serde::{de::DeserializeOwned, Serialize};
 use tracing::{debug, error, trace, warn};
 use wasm_bindgen_futures::spawn_local;
 
+#[cfg(feature = "json")]
+use crate::JSONSerialize;
+#[cfg(any(feature = "json", feature = "postcard"))]
+use crate::MediaType;
+#[cfg(feature = "postcard")]
+use crate::PostcardSerialize;
 use crate::{
-    Dirty, EntityResponse, Inner, JSONSerialize, MacSign, MacVerify, MediaType, Messages, NoMac,
-    PostcardSerialize, StatusCode, HEADER_SIGNATURE,
+    Dirty, EntityResponse, Inner, MacSign, MacVerify, Messages, NoMac, StatusCode, HEADER_SIGNATURE,
 };
 
 use super::{
