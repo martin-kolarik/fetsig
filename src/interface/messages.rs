@@ -5,9 +5,10 @@ use std::{
 
 use futures_signals::{
     signal::{Mutable, Signal, SignalExt},
-    signal_map::MutableBTreeMap,
-    signal_vec::MutableVec,
+    signal_map::{MutableBTreeMap, SignalMapExt},
+    signal_vec::{MutableSignalVec, MutableVec},
 };
+use futures_signals_ext::SignalExtMapOption;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -155,6 +156,27 @@ impl Messages {
     {
         self.messages.lock_mut().remove(&key.to_string());
         Self::evaluate_error(&self.messages);
+    }
+
+    pub fn error_for_key_signal(&self, key: impl ToString) -> impl Signal<Item = bool> {
+        self.messages
+            .signal_map_cloned()
+            .key_cloned(key.to_string())
+            .map_some_default(|messages| messages.lock_ref().iter().any(Message::error))
+    }
+
+    pub fn messages_for_key_signal_vec(
+        &self,
+        key: impl ToString,
+    ) -> impl Signal<Item = MutableSignalVec<Message>> {
+        self.messages
+            .signal_map_cloned()
+            .key_cloned(key.to_string())
+            .map(|messages| {
+                messages
+                    .map(|messages| messages.signal_vec_cloned())
+                    .unwrap_or_else(|| MutableVec::new().signal_vec_cloned())
+            })
     }
 
     pub fn add_entity_error(&self, message: impl ToString) {
