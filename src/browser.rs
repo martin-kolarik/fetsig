@@ -14,6 +14,7 @@ mod entity;
 pub use self::entity::*;
 
 mod file;
+pub use file::*;
 
 mod mac;
 pub use mac::*;
