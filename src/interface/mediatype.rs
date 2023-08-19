@@ -1,3 +1,5 @@
+use core::fmt::Display;
+
 use serde::{Deserialize, Deserializer, Serialize};
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum MediaType {
@@ -45,6 +47,18 @@ const URF: &str = "image/urf";
 const WASM: &str = "application/wasm";
 const XML: &str = "application/xml";
 
+impl MediaType {
+    pub fn as_str(&self) -> &str {
+        self.as_ref()
+    }
+}
+
+impl Display for MediaType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_ref())
+    }
+}
+
 impl From<&str> for MediaType {
     fn from(mime: &str) -> Self {
         match mime {
@@ -75,12 +89,6 @@ impl From<&str> for MediaType {
 impl From<String> for MediaType {
     fn from(mime: String) -> Self {
         Self::from(mime.as_str())
-    }
-}
-
-impl ToString for MediaType {
-    fn to_string(&self) -> String {
-        AsRef::<str>::as_ref(self).into()
     }
 }
 
