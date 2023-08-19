@@ -37,6 +37,20 @@ pub struct FileList {
     inner: web_sys::FileList,
 }
 
+impl FileList {
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    pub fn len(&self) -> usize {
+        self.inner.length() as usize
+    }
+
+    pub fn iter<'a>(&'a self) -> FileListIterator<'a> {
+        FileListIterator::new(self)
+    }
+}
+
 impl From<web_sys::FileList> for FileList {
     fn from(list: web_sys::FileList) -> Self {
         Self { inner: list }
@@ -46,5 +60,31 @@ impl From<web_sys::FileList> for FileList {
 impl From<FileList> for web_sys::FileList {
     fn from(file: FileList) -> Self {
         file.inner
+    }
+}
+
+pub struct FileListIterator<'a> {
+    list: &'a FileList,
+    index: usize,
+}
+
+impl<'a> FileListIterator<'a> {
+    pub fn new(list: &'a FileList) -> Self {
+        Self { list, index: 0 }
+    }
+}
+
+impl<'a> Iterator for FileListIterator<'a> {
+    type Item = File;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.list.inner.get(self.index as u32).map(|file| {
+            self.index += 1;
+            file.into()
+        })
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (0, Some(self.list.len()))
     }
 }
