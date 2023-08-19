@@ -1,14 +1,13 @@
 use std::time::Duration;
 
 use base64::{engine::general_purpose, Engine};
-use futures_time::future::FutureExt;
 use gloo_timers::future::TimeoutFuture;
 use js_sys::{JsString, Uint8Array};
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{AbortController, AbortSignal, Response, ResponseType};
 
-use crate::{uformat, MacVerify, MediaType, StatusCode, HEADER_SIGNATURE};
+use crate::{uformat, MacVerify, MediaType, StatusCode, TimerFutureExt, HEADER_SIGNATURE};
 
 #[cfg(feature = "json")]
 use crate::JSONDeserialize;
