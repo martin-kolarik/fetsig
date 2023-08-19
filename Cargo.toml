@@ -9,7 +9,7 @@ repository = "https://github.com/martin-kolarik/fetsig"
 homepage = "https://github.com/martin-kolarik/fetsig"
 
 [features]
-default = ["browser", "json", "log", "postcard"]
+default = ["browser", "json", "postcard"]
 browser = [
     "base64",
     "bytes",
@@ -21,9 +21,7 @@ browser = [
     "web-sys",
 ]
 json = ["bytes", "serde_json", "serde_with", "ufmt"]
-log = ["dep:log"]
 postcard = ["bytes", "dep:postcard", "ufmt"]
-tracing = ["dep:tracing"]
 
 [dependencies]
 base64 = { version = "^0.21", default-features = false, features = [
@@ -45,13 +43,12 @@ futures-signals-ext = { git = "https://github.com/martin-kolarik/futures-signals
 # ] }
 gloo-timers = { version = "^0.2", features = ["futures"], optional = true }
 js-sys = { version = "^0.3", optional = true }
-log = { version = "^0.4", default-features = false, optional = true }
+log = { version = "^0.4", default-features = false }
 pin-project-lite = { version = "^0.2" }
 postcard = { version = "^1.0", optional = true }
 serde = { version = "^1.0", features = ["derive"] }
 serde_json = { version = "^1.0", optional = true }
 serde_with = { version = "^2.2", optional = true }
-tracing = { version = "^0.1", default-features = false, optional = true }
 ufmt = { version = "^0.2", default-features = false, features = [
     "std",
 ], optional = true }

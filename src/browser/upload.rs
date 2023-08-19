@@ -1,10 +1,7 @@
 use futures_signals::signal::{Mutable, Signal, SignalExt};
 use futures_signals_ext::{MutableExt, MutableOption};
-#[cfg(feature = "log")]
 use log::debug;
 use serde::de::DeserializeOwned;
-#[cfg(feature = "tracing")]
-use tracing::debug;
 
 use crate::{Messages, NoMac, StatusCode};
 

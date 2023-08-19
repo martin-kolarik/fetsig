@@ -4,11 +4,8 @@ use futures_signals::signal::{
     and, not, Mutable, MutableLockMut, MutableLockRef, Signal, SignalExt,
 };
 use futures_signals_ext::{MutableExt, MutableOption};
-#[cfg(feature = "log")]
 use log::{debug, error, trace, warn};
 use serde::{de::DeserializeOwned, Serialize};
-#[cfg(feature = "tracing")]
-use tracing::{debug, error, trace, warn};
 use wasm_bindgen_futures::spawn_local;
 
 #[cfg(feature = "json")]
