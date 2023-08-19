@@ -13,7 +13,6 @@ default = ["browser", "json", "log", "postcard"]
 browser = [
     "base64",
     "bytes",
-    "futures-signals-ext",
     "gloo-timers",
     "js-sys",
     "ufmt",
@@ -39,7 +38,7 @@ futures-signals = { version = "^0.3", default-features = false, features = [
 futures-signals-ext = { version = "^0.1", default-features = false, features = [
     "option",
     "spawn-local",
-], optional = true }
+] }
 gloo-timers = { version = "^0.2", features = ["futures"], optional = true }
 js-sys = { version = "^0.3", optional = true }
 log = { version = "^0.4", default-features = false, optional = true }
