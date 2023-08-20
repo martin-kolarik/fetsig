@@ -72,7 +72,7 @@ impl Deref for Messages {
     type Target = MutableBTreeMap<String, MutableVec<Message>>;
 
     fn deref(&self) -> &Self::Target {
-        todo!()
+        &self.messages
     }
 }
 
