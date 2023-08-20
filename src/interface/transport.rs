@@ -10,6 +10,7 @@ use crate::Messages;
 )]
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct EntityResponse<E> {
+    #[serde(flatten)]
     messages: Messages,
     entity: Option<E>,
 }
@@ -47,6 +48,7 @@ impl<E> EntityResponse<E> {
 )]
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct CollectionResponse<E> {
+    #[serde(flatten)]
     messages: Messages,
     paging: Paging,
     collection: Option<Vec<E>>,
