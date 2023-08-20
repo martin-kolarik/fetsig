@@ -6,9 +6,9 @@ pub struct File {
 }
 
 // hazardous, but as JS is single threaded (everything is accessed from UI thread), it is OK
-// unsafe impl Sync for File {}
-// #[allow(clippy::non_send_fields_in_send_ty)]
-// unsafe impl Send for File {}
+unsafe impl Sync for File {}
+#[allow(clippy::non_send_fields_in_send_ty)]
+unsafe impl Send for File {}
 
 impl From<web_sys::File> for File {
     fn from(file: web_sys::File) -> Self {
