@@ -46,7 +46,7 @@ impl FileList {
         self.inner.length() as usize
     }
 
-    pub fn iter<'a>(&'a self) -> FileListIterator<'a> {
+    pub fn iter(&self) -> FileListIterator {
         FileListIterator::new(self)
     }
 }

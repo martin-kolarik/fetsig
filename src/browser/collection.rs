@@ -241,7 +241,7 @@ where
     where
         F: Fn(&E) -> bool,
     {
-        self.find_map(|e| f(e).then(|| *e))
+        self.find_map(|e| f(e).then_some(*e))
     }
 
     pub fn find_inspect_mut<P, F>(&self, predicate: P, f: F) -> Option<bool>

@@ -248,7 +248,7 @@ where
 
     let data = if content.is_string() {
         if let Some(string) = content.dyn_ref::<JsString>().and_then(|s| s.as_string()) {
-            if string.len() == 0 {
+            if string.is_empty() {
                 return Ok(None);
             } else {
                 string.as_bytes().to_vec()

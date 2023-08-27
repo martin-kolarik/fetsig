@@ -18,7 +18,7 @@ pub struct Message {
 }
 
 impl Message {
-    pub fn new(error: bool, text: impl ToString) -> Self {
+    fn new(error: bool, text: impl ToString) -> Self {
         Self {
             error,
             text: text.to_string(),
