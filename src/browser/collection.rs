@@ -1,4 +1,4 @@
-use std::marker::PhantomData;
+use std::{cmp, marker::PhantomData};
 
 use futures_signals::{
     map_ref,
@@ -274,17 +274,15 @@ where
             });
     }
 
-    pub fn set_or_insert<K, O>(&self, mut sort_key: K, item: E)
+    pub fn set_or_insert<F>(&self, cmp: F, item: E)
     where
-        K: FnMut(&E) -> O,
-        O: Ord,
+        F: FnMut(&E) -> cmp::Ordering,
     {
-        self.collection.inspect_mut(|collection| {
-            match collection.binary_search_by_key(&sort_key(&item), sort_key) {
+        self.collection
+            .inspect_mut(|collection| match collection.binary_search_by(cmp) {
                 Ok(index) => collection.set(index, item),
                 Err(index) => collection.insert(index, item),
-            }
-        });
+            });
     }
 
     pub fn replace(&self, values: Vec<E>) -> Vec<E> {
@@ -396,17 +394,15 @@ where
             });
     }
 
-    pub fn set_or_insert_cloned<K, O>(&self, mut sort_key: K, item: E)
+    pub fn set_or_insert_cloned<F>(&self, cmp: F, item: E)
     where
-        K: FnMut(&E) -> O,
-        O: Ord,
+        F: FnMut(&E) -> cmp::Ordering,
     {
-        self.collection.inspect_mut(|collection| {
-            match collection.binary_search_by_key(&sort_key(&item), sort_key) {
+        self.collection
+            .inspect_mut(|collection| match collection.binary_search_by(cmp) {
                 Ok(index) => collection.set_cloned(index, item),
                 Err(index) => collection.insert_cloned(index, item),
-            }
-        });
+            });
     }
 
     pub fn replace_cloned(&self, values: Vec<E>) -> Vec<E> {
