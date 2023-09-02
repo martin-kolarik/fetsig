@@ -6,6 +6,8 @@ pub use browser::*;
 mod interface;
 pub use interface::*;
 
+pub use futures_signals_ext::*;
+
 #[macro_export]
 macro_rules! uformat {
     ($($arg:tt)*) => {{
