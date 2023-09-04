@@ -89,7 +89,7 @@ impl Messages {
 
     pub fn replace(&self, with: Messages) {
         self.lock_mut().replace_cloned(with.lock_mut().clone());
-        self.error.set_neq(Self::evaluate_error(&self.messages));
+        self.evaluate_error();
     }
 
     #[must_use]
@@ -103,14 +103,16 @@ impl Messages {
     }
 
     pub fn error(&self) -> bool {
-        Self::evaluate_error(&self.messages)
+        self.error.get()
     }
 
-    fn evaluate_error(messages: &MutableBTreeMap<String, MutableVec<Message>>) -> bool {
-        messages
+    fn evaluate_error(&self) {
+        let error = self
+            .messages
             .lock_ref()
             .values()
-            .any(|messages| messages.lock_ref().iter().any(Message::error))
+            .any(|messages| messages.lock_ref().iter().any(Message::error));
+        self.error.set_neq(error);
     }
 
     pub fn error_signal(&self) -> impl Signal<Item = bool> {
@@ -155,7 +157,7 @@ impl Messages {
         K: ToString,
     {
         self.messages.lock_mut().remove(&key.to_string());
-        Self::evaluate_error(&self.messages);
+        self.evaluate_error();
     }
 
     pub fn error_for_key_signal(&self, key: impl ToString) -> impl Signal<Item = bool> {
