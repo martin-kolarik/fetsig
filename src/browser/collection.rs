@@ -252,37 +252,25 @@ where
         self.collection.find_inspect_mut(predicate, f)
     }
 
-    pub fn set<P>(&self, predicate: P, item: E)
+    pub fn find_set<P>(&self, predicate: P, item: E)
     where
         P: FnMut(&E) -> bool,
     {
-        self.collection.inspect_mut(|collection| {
-            if let Some(index) = collection.iter().position(predicate) {
-                collection.set(index, item);
-            }
-        });
+        self.collection.find_set(predicate, item);
     }
 
-    pub fn set_or_add<P>(&self, predicate: P, item: E)
+    pub fn find_set_or_add<P>(&self, predicate: P, item: E)
     where
         P: FnMut(&E) -> bool,
     {
-        self.collection
-            .inspect_mut(|collection| match collection.iter().position(predicate) {
-                Some(index) => collection.set(index, item),
-                None => collection.push(item),
-            });
+        self.collection.find_set_or_add(predicate, item);
     }
 
-    pub fn set_or_insert<F>(&self, cmp: F, item: E)
+    pub fn find_set_or_insert<F>(&self, cmp: F, item: E)
     where
         F: FnMut(&E) -> cmp::Ordering,
     {
-        self.collection
-            .inspect_mut(|collection| match collection.binary_search_by(cmp) {
-                Ok(index) => collection.set(index, item),
-                Err(index) => collection.insert(index, item),
-            });
+        self.collection.find_set_or_insert(cmp, item);
     }
 
     pub fn replace(&self, values: Vec<E>) -> Vec<E> {
@@ -372,37 +360,25 @@ where
         self.collection.lock_ref().to_vec()
     }
 
-    pub fn set_cloned<P>(&self, predicate: P, item: E)
+    pub fn find_set_cloned<P>(&self, predicate: P, item: E)
     where
         P: FnMut(&E) -> bool,
     {
-        self.collection.inspect_mut(|collection| {
-            if let Some(index) = collection.iter().position(predicate) {
-                collection.set_cloned(index, item);
-            }
-        });
+        self.collection.find_set_cloned(predicate, item);
     }
 
-    pub fn set_or_add_cloned<P>(&self, predicate: P, item: E)
+    pub fn find_set_or_add_cloned<P>(&self, predicate: P, item: E)
     where
         P: FnMut(&E) -> bool,
     {
-        self.collection
-            .inspect_mut(|collection| match collection.iter().position(predicate) {
-                Some(index) => collection.set_cloned(index, item),
-                None => collection.push_cloned(item),
-            });
+        self.collection.find_set_or_add_cloned(predicate, item);
     }
 
-    pub fn set_or_insert_cloned<F>(&self, cmp: F, item: E)
+    pub fn find_set_or_insert_cloned<F>(&self, cmp: F, item: E)
     where
         F: FnMut(&E) -> cmp::Ordering,
     {
-        self.collection
-            .inspect_mut(|collection| match collection.binary_search_by(cmp) {
-                Ok(index) => collection.set_cloned(index, item),
-                Err(index) => collection.insert_cloned(index, item),
-            });
+        self.collection.find_set_or_insert_cloned(cmp, item);
     }
 
     pub fn replace_cloned(&self, values: Vec<E>) -> Vec<E> {
