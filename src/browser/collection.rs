@@ -213,15 +213,11 @@ impl<E, MV> CollectionStore<E, MV> {
         f(self.collection.lock_mut())
     }
 
-    pub fn remove<P>(&self, predicate: P)
+    pub fn remove<P>(&self, predicate: P) -> bool
     where
         P: FnMut(&E) -> bool,
     {
-        self.collection.inspect_mut(|collection| {
-            if let Some(index) = collection.iter().position(predicate) {
-                collection.remove(index);
-            }
-        });
+        self.collection.find_remove(predicate)
     }
 }
 
