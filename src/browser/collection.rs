@@ -252,11 +252,11 @@ where
         self.collection.find_inspect_mut(predicate, f)
     }
 
-    pub fn find_set<P>(&self, predicate: P, item: E)
+    pub fn find_set<P>(&self, predicate: P, item: E) -> bool
     where
         P: FnMut(&E) -> bool,
     {
-        self.collection.find_set(predicate, item);
+        self.collection.find_set(predicate, item)
     }
 
     pub fn find_set_or_add<P>(&self, predicate: P, item: E)
@@ -360,11 +360,11 @@ where
         self.collection.lock_ref().to_vec()
     }
 
-    pub fn find_set_cloned<P>(&self, predicate: P, item: E)
+    pub fn find_set_cloned<P>(&self, predicate: P, item: E) -> bool
     where
         P: FnMut(&E) -> bool,
     {
-        self.collection.find_set_cloned(predicate, item);
+        self.collection.find_set_cloned(predicate, item)
     }
 
     pub fn find_set_or_add_cloned<P>(&self, predicate: P, item: E)
