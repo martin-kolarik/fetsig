@@ -180,16 +180,16 @@ impl<E, MV> CollectionStore<E, MV> {
 
     pub fn inspect<F>(&self, f: F)
     where
-        F: FnOnce(MutableVecLockRef<E>),
+        F: FnOnce(&[E]),
     {
-        f(self.collection.lock_ref())
+        self.collection.inspect(f)
     }
 
     pub fn inspect_mut<F>(&self, f: F)
     where
         F: FnOnce(MutableVecLockMut<E>),
     {
-        f(self.collection.lock_mut())
+        self.collection.inspect_mut(f)
     }
 
     pub fn find_map<F, U>(&self, f: F) -> Option<U>
@@ -199,18 +199,18 @@ impl<E, MV> CollectionStore<E, MV> {
         self.collection.lock_ref().iter().find_map(f)
     }
 
-    pub fn map<F, U>(&self, f: F) -> U
+    pub fn map_vec<F, U>(&self, f: F) -> U
     where
-        F: FnOnce(MutableVecLockRef<E>) -> U,
+        F: FnOnce(&[E]) -> U,
     {
-        f(self.collection.lock_ref())
+        self.collection.map_vec(f)
     }
 
-    pub fn map_mut<F, U>(&self, f: F) -> U
+    pub fn map_vec_mut<F, U>(&self, f: F) -> U
     where
         F: FnOnce(MutableVecLockMut<E>) -> U,
     {
-        f(self.collection.lock_mut())
+        self.collection.map_vec_mut(f)
     }
 
     pub fn remove<P>(&self, predicate: P) -> bool

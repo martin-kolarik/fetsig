@@ -260,7 +260,7 @@ dependencies = [
 [[package]]
 name = "futures-signals-ext"
 version = "0.1.4"
-source = "git+https://github.com/martin-kolarik/futures-signals-ext.git#aea28ca3b5c34fec2765d9caaf92eaf472afce6b"
+source = "git+https://github.com/martin-kolarik/futures-signals-ext.git#10ed82c577a476ac70d0f9761d841fe8ff1d5652"
 dependencies = [
  "async-global-executor",
  "futures-signals",
