@@ -187,7 +187,7 @@ impl<E, MV> CollectionStore<E, MV> {
 
     pub fn inspect_mut<F>(&self, f: F)
     where
-        F: FnOnce(MutableVecLockMut<E>),
+        F: FnOnce(&mut MutableVecLockMut<E>),
     {
         self.collection.inspect_mut(f)
     }
@@ -208,7 +208,7 @@ impl<E, MV> CollectionStore<E, MV> {
 
     pub fn map_vec_mut<F, U>(&self, f: F) -> U
     where
-        F: FnOnce(MutableVecLockMut<E>) -> U,
+        F: FnOnce(&mut MutableVecLockMut<E>) -> U,
     {
         self.collection.map_vec_mut(f)
     }
