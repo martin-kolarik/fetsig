@@ -1,4 +1,8 @@
-use futures_signals::{map_ref, signal::Signal};
+use futures_signals::{
+    map_ref,
+    signal::{Signal, SignalExt},
+    signal_vec::{MutableVec, SignalVecExt},
+};
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub enum CollectionState {
@@ -69,4 +73,23 @@ where
             }
         }
     )
+}
+
+pub fn collection_state_from_vec<T, S>(
+    vec: &MutableVec<T>,
+    pending: S,
+) -> impl Signal<Item = CollectionState>
+where
+    T: Clone,
+    S: Signal<Item = bool>,
+{
+    let empty = vec.signal_vec_cloned().is_empty();
+    map_ref! {
+        pending, empty => (*pending, *empty)
+    }
+    .map(|state| match state {
+        (true, _) => CollectionState::Pending,
+        (false, true) => CollectionState::Empty,
+        (false, false) => CollectionState::NotEmpty,
+    })
 }
