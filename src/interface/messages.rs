@@ -6,7 +6,7 @@ use std::{
 use futures_signals::{
     signal::{Mutable, Signal, SignalExt},
     signal_map::{MutableBTreeMap, SignalMapExt},
-    signal_vec::{MutableSignalVec, MutableVec},
+    signal_vec::{MutableVec, SignalVec},
 };
 use futures_signals_ext::SignalExtMapOption;
 use serde::{Deserialize, Serialize};
@@ -160,6 +160,13 @@ impl Messages {
         self.evaluate_error();
     }
 
+    pub fn anything_for_key_signal(&self, key: impl ToString) -> impl Signal<Item = bool> {
+        self.messages
+            .signal_map_cloned()
+            .key_cloned(key.to_string())
+            .map_some_default(|messages| !messages.lock_ref().is_empty())
+    }
+
     pub fn error_for_key_signal(&self, key: impl ToString) -> impl Signal<Item = bool> {
         self.messages
             .signal_map_cloned()
@@ -170,11 +177,11 @@ impl Messages {
     pub fn messages_for_key_signal_vec(
         &self,
         key: impl ToString,
-    ) -> impl Signal<Item = MutableSignalVec<Message>> {
+    ) -> impl SignalVec<Item = Message> {
         self.messages
             .signal_map_cloned()
             .key_cloned(key.to_string())
-            .map(|messages| {
+            .switch_signal_vec(|messages| {
                 messages
                     .map(|messages| messages.signal_vec_cloned())
                     .unwrap_or_else(|| MutableVec::new().signal_vec_cloned())
