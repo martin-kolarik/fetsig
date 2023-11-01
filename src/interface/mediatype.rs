@@ -24,6 +24,7 @@ pub enum MediaType {
     Urf,
     Wasm,
     Xml,
+    Xlsx,
 }
 
 const BYTE_STREAM: &str = "application/octet-stream";
@@ -45,6 +46,7 @@ const SSE: &str = "text/event-stream";
 const SVG: &str = "image/svg+xml";
 const URF: &str = "image/urf";
 const WASM: &str = "application/wasm";
+const XLSX: &str = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 const XML: &str = "application/xml";
 
 impl MediaType {
@@ -81,6 +83,7 @@ impl From<&str> for MediaType {
             URF => Self::Urf,
             WASM => Self::Wasm,
             XML => Self::Xml,
+            XLSX => Self::Xlsx,
             _ => Self::default(),
         }
     }
@@ -115,6 +118,7 @@ impl AsRef<str> for MediaType {
             MediaType::Urf => URF,
             MediaType::Wasm => WASM,
             MediaType::Xml => XML,
+            MediaType::Xlsx => XLSX,
         }
     }
 }
