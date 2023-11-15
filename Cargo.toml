@@ -1,6 +1,6 @@
 [package]
 name = "fetsig"
-version = "0.1.5"
+version = "0.1.6"
 authors = ["martin.kolarik@smartcontrol.cz"]
 description = "Web-sys based browser fetch library using futures-signals with optional MAC."
 edition = "2021"
@@ -33,14 +33,14 @@ bytes = { version = "^1.4", default-features = false, features = [
 futures-signals = { version = "^0.3", default-features = false, features = [
     "serde",
 ] }
-futures-signals-ext = { git = "https://github.com/martin-kolarik/futures-signals-ext.git", default-features = false, features = [
-    "option",
-    "spawn-local",
-] }
-# futures-signals-ext = { version = "^0.1", default-features = false, features = [
+# futures-signals-ext = { git = "https://github.com/martin-kolarik/futures-signals-ext.git", default-features = false, features = [
 #     "option",
 #     "spawn-local",
 # ] }
+futures-signals-ext = { version = "^0.1", default-features = false, features = [
+    "option",
+    "spawn-local",
+] }
 gloo-timers = { version = "^0.3", features = ["futures"], optional = true }
 js-sys = { version = "^0.3", optional = true }
 log = { version = "^0.4", default-features = false }
