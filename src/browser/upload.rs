@@ -71,7 +71,7 @@ impl UploadStore {
         response_messages: Messages,
         result_callback: C,
     ) where
-        R: Clone + DeserializeOwned + 'static,
+        R: DeserializeOwned + 'static,
         C: Fn(StatusCode) + 'static,
     {
         self.do_store::<_, _>(
@@ -90,7 +90,7 @@ impl UploadStore {
         result_callback: C,
     ) where
         C: Fn(StatusCode) + 'static,
-        R: Clone + DeserializeOwned + 'static,
+        R: DeserializeOwned + 'static,
     {
         if request.logging() {
             debug!("Request to store {}", request.url());

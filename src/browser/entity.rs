@@ -380,7 +380,7 @@ where
 {
     pub fn load<C>(&self, request: Request<'_>, result_callback: C)
     where
-        E: Clone + DeserializeOwned + 'static,
+        E: DeserializeOwned + 'static,
         C: FnOnce(StatusCode) + 'static,
     {
         if self.transfer_state.map(TransferState::loaded) {
@@ -401,7 +401,7 @@ where
 
     pub fn load_skip_cache<C>(&self, request: Request<'_>, result_callback: C)
     where
-        E: Clone + DeserializeOwned + 'static,
+        E: DeserializeOwned + 'static,
         C: FnOnce(StatusCode) + 'static,
     {
         if request.logging() {
@@ -430,9 +430,9 @@ where
         request_entity: MutableOption<R>,
         result_callback: C,
     ) where
-        E: Clone + DeserializeOwned + 'static,
+        E: DeserializeOwned + 'static,
         MS: MacSign,
-        R: Clone + Serialize,
+        R: Serialize,
         C: FnOnce(StatusCode) + 'static,
     {
         store::<_, _, _, MS, MV>(
@@ -475,7 +475,7 @@ where
         response_entity: MutableOption<R>,
         result_callback: C,
     ) where
-        R: Clone + DeserializeOwned + 'static,
+        R: DeserializeOwned + 'static,
         C: FnOnce(StatusCode) + 'static,
     {
         if request.logging() {
@@ -504,7 +504,7 @@ where
 
     pub fn store<MS, C>(&self, request: Request<'_>, result_callback: C)
     where
-        E: Clone + Serialize + DeserializeOwned + 'static,
+        E: Serialize + DeserializeOwned + 'static,
         MS: MacSign,
         C: FnOnce(StatusCode) + 'static,
     {
@@ -531,7 +531,7 @@ where
     ) where
         E: Serialize,
         MS: MacSign,
-        R: Clone + DeserializeOwned + 'static,
+        R: DeserializeOwned + 'static,
         C: FnOnce(StatusCode) + 'static,
     {
         store::<_, _, _, MS, MV>(
@@ -554,7 +554,7 @@ fn store<E, R, C, MS, MV>(
     result_callback: C,
 ) where
     E: Serialize,
-    R: Clone + DeserializeOwned + 'static,
+    R: DeserializeOwned + 'static,
     C: FnOnce(StatusCode) + 'static,
     MS: MacSign,
     MV: MacVerify,
@@ -639,7 +639,7 @@ pub(super) fn fetch<R, C, MV>(
     result_callback: C,
 ) where
     C: FnOnce(StatusCode) + 'static,
-    R: Clone + DeserializeOwned + 'static,
+    R: DeserializeOwned + 'static,
     MV: MacVerify,
 {
     let logging = request.logging();
@@ -683,7 +683,7 @@ async fn execute_entity_fetch<E, MV>(
     }: EntityFetchContext<E>,
 ) -> StatusCode
 where
-    E: Clone + DeserializeOwned,
+    E: DeserializeOwned,
     MV: MacVerify,
 {
     let mut result = execute_fetch::<EntityResponse<E>, MV>(pending_fetch).await;
