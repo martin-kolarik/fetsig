@@ -322,8 +322,7 @@ dependencies = [
 [[package]]
 name = "futures-signals-ext"
 version = "0.1.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "585266529bff1563ae0095bdc12c6f13b905c75d3efb8d76335292a9ed099359"
+source = "git+https://github.com/martin-kolarik/futures-signals-ext.git#e1b2ecf088cb9a7e1f1b87a3a5d7d1185009295b"
 dependencies = [
  "async-global-executor",
  "futures-signals",
