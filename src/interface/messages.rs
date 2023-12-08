@@ -1,4 +1,5 @@
 use std::{
+    collections::BTreeMap,
     fmt::{Debug, Formatter, Result},
     ops::Deref,
 };
@@ -10,6 +11,7 @@ use futures_signals::{
 };
 use futures_signals_ext::SignalExtMapOption;
 use serde::{Deserialize, Serialize};
+use smol_str::SmolStr;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Message {
@@ -38,7 +40,7 @@ impl Message {
 pub struct Messages {
     #[serde(skip)]
     error: Mutable<bool>,
-    messages: MutableBTreeMap<String, MutableVec<Message>>,
+    messages: MutableBTreeMap<SmolStr, MutableVec<Message>>,
 }
 
 impl From<&str> for Messages {
@@ -69,7 +71,7 @@ impl Debug for Messages {
 }
 
 impl Deref for Messages {
-    type Target = MutableBTreeMap<String, MutableVec<Message>>;
+    type Target = MutableBTreeMap<SmolStr, MutableVec<Message>>;
 
     fn deref(&self) -> &Self::Target {
         &self.messages
@@ -92,10 +94,21 @@ impl Messages {
         self.evaluate_error();
     }
 
+    pub fn from_inner(inner: BTreeMap<SmolStr, MutableVec<Message>>) -> Self {
+        Self {
+            error: Mutable::new(false),
+            messages: MutableBTreeMap::with_values(inner),
+        }
+    }
+
+    pub fn into_inner(self) -> BTreeMap<SmolStr, MutableVec<Message>> {
+        self.messages.lock_ref().deref().clone()
+    }
+
     #[must_use]
     fn with<K, M>(self, key: K, error: bool, message: M) -> Self
     where
-        K: ToString,
+        K: Into<SmolStr>,
         M: ToString,
     {
         self.add(key, error, message);
@@ -126,11 +139,11 @@ impl Messages {
 
     pub fn set<K, M>(&self, key: K, error: bool, message: M)
     where
-        K: ToString,
+        K: Into<SmolStr>,
         M: ToString,
     {
         self.messages.lock_mut().insert_cloned(
-            key.to_string(),
+            key.into(),
             MutableVec::new_with_values(vec![Message::new(error, message.to_string())]),
         );
         self.error.set_neq(error);
@@ -138,10 +151,10 @@ impl Messages {
 
     pub fn add<K, M>(&self, key: K, error: bool, message: M)
     where
-        K: ToString,
+        K: Into<SmolStr>,
         M: ToString,
     {
-        let key = key.to_string();
+        let key = key.into();
         let message = Message::new(error, message.to_string());
         let mut lock = self.messages.lock_mut();
         if let Some(messages) = lock.get(&key) {
@@ -154,33 +167,33 @@ impl Messages {
 
     pub fn clear<K>(&self, key: K)
     where
-        K: ToString,
+        K: Into<SmolStr>,
     {
-        self.messages.lock_mut().remove(&key.to_string());
+        self.messages.lock_mut().remove(&key.into());
         self.evaluate_error();
     }
 
-    pub fn anything_for_key_signal(&self, key: impl ToString) -> impl Signal<Item = bool> {
+    pub fn anything_for_key_signal(&self, key: impl Into<SmolStr>) -> impl Signal<Item = bool> {
         self.messages
             .signal_map_cloned()
-            .key_cloned(key.to_string())
+            .key_cloned(key.into())
             .map_some_default(|messages| !messages.lock_ref().is_empty())
     }
 
-    pub fn error_for_key_signal(&self, key: impl ToString) -> impl Signal<Item = bool> {
+    pub fn error_for_key_signal(&self, key: impl Into<SmolStr>) -> impl Signal<Item = bool> {
         self.messages
             .signal_map_cloned()
-            .key_cloned(key.to_string())
+            .key_cloned(key.into())
             .map_some_default(|messages| messages.lock_ref().iter().any(Message::error))
     }
 
     pub fn messages_for_key_signal_vec(
         &self,
-        key: impl ToString,
+        key: impl Into<SmolStr>,
     ) -> impl SignalVec<Item = Message> {
         self.messages
             .signal_map_cloned()
-            .key_cloned(key.to_string())
+            .key_cloned(key.into())
             .switch_signal_vec(|messages| {
                 messages
                     .map(|messages| messages.signal_vec_cloned())

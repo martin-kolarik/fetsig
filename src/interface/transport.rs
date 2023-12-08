@@ -1,24 +1,27 @@
+use std::collections::BTreeMap;
+
+use futures_signals::signal_vec::MutableVec;
 use serde::{Deserialize, Serialize};
 #[cfg(all(feature = "json", not(feature = "postcard")))]
 use serde_with::skip_serializing_none;
+use smol_str::SmolStr;
 
-use crate::Messages;
+use crate::{Message, Messages};
 
 #[cfg_attr(
     all(feature = "json", not(feature = "postcard")),
     skip_serializing_none
 )]
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Default, Serialize, Deserialize)]
 pub struct EntityResponse<E> {
-    #[serde(flatten)]
-    messages: Messages,
+    messages: BTreeMap<SmolStr, MutableVec<Message>>,
     entity: Option<E>,
 }
 
 impl<E> EntityResponse<E> {
     pub fn new(messages: Messages) -> Self {
         Self {
-            messages,
+            messages: messages.into_inner(),
             entity: None,
         }
     }
@@ -29,16 +32,8 @@ impl<E> EntityResponse<E> {
         self
     }
 
-    pub fn messages(&self) -> &Messages {
-        &self.messages
-    }
-
-    pub fn entity(&self) -> Option<&E> {
-        self.entity.as_ref()
-    }
-
     pub fn take(self) -> (Option<E>, Messages) {
-        (self.entity, self.messages)
+        (self.entity, Messages::from_inner(self.messages))
     }
 }
 
@@ -46,10 +41,9 @@ impl<E> EntityResponse<E> {
     all(feature = "json", not(feature = "postcard")),
     skip_serializing_none
 )]
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Default, Serialize, Deserialize)]
 pub struct CollectionResponse<E> {
-    #[serde(flatten)]
-    messages: Messages,
+    messages: BTreeMap<SmolStr, MutableVec<Message>>,
     paging: Paging,
     collection: Option<Vec<E>>,
 }
@@ -57,7 +51,7 @@ pub struct CollectionResponse<E> {
 impl<E> CollectionResponse<E> {
     pub fn new(messages: Messages) -> Self {
         Self {
-            messages,
+            messages: messages.into_inner(),
             paging: Paging::default(),
             collection: None,
         }
@@ -76,7 +70,11 @@ impl<E> CollectionResponse<E> {
     }
 
     pub fn take(self) -> (Option<Vec<E>>, Messages, Paging) {
-        (self.collection, self.messages, self.paging)
+        (
+            self.collection,
+            Messages::from_inner(self.messages),
+            self.paging,
+        )
     }
 }
 
