@@ -37,7 +37,7 @@ impl<E, MV> EntityStore<E, MV> {
         Self {
             transfer_state: Mutable::new(TransferState::Empty),
             messages: Messages::new(),
-            entity: MutableOption::new_empty(),
+            entity: MutableOption::new(None),
             pmv: PhantomData,
         }
     }
@@ -58,7 +58,7 @@ impl<E, MV> EntityStore<E, MV> {
         Self {
             transfer_state: Mutable::new(TransferState::Empty),
             messages: Messages::new(),
-            entity: MutableOption::new_some_value(entity),
+            entity: MutableOption::new_some(entity),
             pmv: PhantomData,
         }
     }
