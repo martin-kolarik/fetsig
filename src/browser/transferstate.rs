@@ -19,11 +19,11 @@ impl TransferState {
         matches!(*self, Self::Loaded(status) if status.is_success())
     }
 
-    pub fn loaded_status(&self) -> StatusCode {
+    pub fn loaded_status(&self) -> Option<StatusCode> {
         if let Self::Loaded(status) = self {
-            *status
+            Some(*status)
         } else {
-            StatusCode::Undefined
+            None
         }
     }
 
@@ -31,11 +31,11 @@ impl TransferState {
         matches!(*self, Self::Stored(status) if status.is_success())
     }
 
-    pub fn stored_status(&self) -> StatusCode {
+    pub fn stored_status(&self) -> Option<StatusCode> {
         if let Self::Stored(status) = self {
-            *status
+            Some(*status)
         } else {
-            StatusCode::Undefined
+            None
         }
     }
 

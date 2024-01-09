@@ -39,11 +39,11 @@ impl UploadStore {
         self.transfer_state.signal_ref(|state| state.stored())
     }
 
-    pub fn stored_status(&self) -> StatusCode {
+    pub fn stored_status(&self) -> Option<StatusCode> {
         self.transfer_state.map(TransferState::stored_status)
     }
 
-    pub fn stored_status_signal(&self) -> impl Signal<Item = StatusCode> {
+    pub fn stored_status_signal(&self) -> impl Signal<Item = Option<StatusCode>> {
         self.transfer_state
             .signal_ref(TransferState::stored_status)
             .dedupe()

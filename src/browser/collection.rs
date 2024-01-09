@@ -100,11 +100,11 @@ impl<E, MV> CollectionStore<E, MV> {
             .dedupe()
     }
 
-    pub fn loaded_status(&self) -> StatusCode {
+    pub fn loaded_status(&self) -> Option<StatusCode> {
         self.transfer_state.map(TransferState::loaded_status)
     }
 
-    pub fn loaded_status_signal(&self) -> impl Signal<Item = StatusCode> {
+    pub fn loaded_status_signal(&self) -> impl Signal<Item = Option<StatusCode>> {
         self.transfer_state
             .signal_ref(TransferState::loaded_status)
             .dedupe()
@@ -120,11 +120,11 @@ impl<E, MV> CollectionStore<E, MV> {
             .dedupe()
     }
 
-    pub fn stored_status(&self) -> StatusCode {
+    pub fn stored_status(&self) -> Option<StatusCode> {
         self.transfer_state.map(TransferState::stored_status)
     }
 
-    pub fn stored_status_signal(&self) -> impl Signal<Item = StatusCode> {
+    pub fn stored_status_signal(&self) -> impl Signal<Item = Option<StatusCode>> {
         self.transfer_state
             .signal_ref(TransferState::stored_status)
             .dedupe()
