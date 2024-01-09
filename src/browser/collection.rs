@@ -474,12 +474,40 @@ where
                 );
             }
         }
-        fetch::<_, _, MV>(
+
+        let collection = self.collection.clone();
+        fetch::<_, _, _, MV>(
             request.with_is_load(true),
             self.transfer_state.clone(),
             self.messages.clone(),
             self.paging.clone(),
-            self.collection.clone(),
+            move |new| collection.lock_mut().replace_cloned(new),
+            result_callback,
+        );
+    }
+
+    pub fn load_merge<F, C>(&self, request: Request<'_>, merge_fn: F, result_callback: C)
+    where
+        E: DeserializeOwned + 'static,
+        F: FnMut(Vec<E>) + 'static,
+        C: FnOnce(StatusCode) + 'static,
+    {
+        if request.logging() {
+            debug!("Request to load/merge {}", request.url());
+
+            if !request.method().is_load() {
+                warn!(
+                    "Load/merge request unexpectedly uses store verb {:?}",
+                    request.method().as_str()
+                );
+            }
+        }
+        fetch::<_, _, _, MV>(
+            request.with_is_load(true),
+            self.transfer_state.clone(),
+            self.messages.clone(),
+            self.paging.clone(),
+            merge_fn,
             result_callback,
         );
     }
@@ -547,27 +575,29 @@ where
             }
         }
 
-        fetch::<_, _, MV>(
+        let collection = self.collection.clone();
+        fetch::<_, _, _, MV>(
             request,
             self.transfer_state.clone(),
             self.messages.clone(),
             self.paging.clone(),
-            self.collection.clone(),
+            move |new| collection.lock_mut().replace_cloned(new),
             result_callback,
         );
     }
 }
 
-fn fetch<E, C, MV>(
+fn fetch<E, F, C, MV>(
     request: Request<'_>,
     transfer_state: Mutable<TransferState>,
     messages: Messages,
     paging: Mutable<Paging>,
-    collection: MutableVec<E>,
+    store_fn: F,
     result_callback: C,
 ) where
     E: Clone + DeserializeOwned + 'static,
     C: FnOnce(StatusCode) + 'static,
+    F: FnMut(Vec<E>) + 'static,
     MV: MacVerify,
 {
     let logging = request.logging();
@@ -589,31 +619,32 @@ fn fetch<E, C, MV>(
         transfer_state.lock_mut().start_store();
     }
 
-    let context = CollectionFetchContext {
+    let context = CollectionFetchContext::<E, F> {
         logging,
         messages,
         paging,
-        collection,
+        store_fn,
     };
 
     spawn_local(async move {
-        let status = execute_collection_fetch::<_, MV>(pending_fetch, context).await;
+        let status = execute_collection_fetch::<_, _, MV>(pending_fetch, context).await;
         result_callback(status);
         transfer_state.lock_mut().stop(status);
     });
 }
 
-async fn execute_collection_fetch<E, MV>(
+async fn execute_collection_fetch<E, F, MV>(
     pending_fetch: PendingFetch,
     CollectionFetchContext {
         logging,
         messages,
         paging,
-        collection,
-    }: CollectionFetchContext<E>,
+        mut store_fn,
+    }: CollectionFetchContext<E, F>,
 ) -> StatusCode
 where
     E: Clone + DeserializeOwned,
+    F: FnMut(Vec<E>) + 'static,
     MV: MacVerify,
 {
     let mut result = execute_fetch::<CollectionResponse<E>, MV>(pending_fetch).await;
@@ -656,7 +687,7 @@ where
                 if logging {
                     trace!("Request successfully fetched collection");
                 }
-                collection.lock_mut().replace_cloned(entities);
+                store_fn(entities);
             }
             *paging.lock_mut() = response_paging;
             status
@@ -670,11 +701,11 @@ impl<E, MV> Default for CollectionStore<E, MV> {
     }
 }
 
-struct CollectionFetchContext<E> {
+struct CollectionFetchContext<E, F> {
     logging: bool,
     messages: Messages,
     paging: Mutable<Paging>,
-    collection: MutableVec<E>,
+    store_fn: F,
 }
 
 pub fn collection_state_signal<P, E>(pending: P, empty: E) -> impl Signal<Item = CollectionState>
