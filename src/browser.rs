@@ -8,7 +8,7 @@ mod collectionstate;
 pub use collectionstate::*;
 
 mod common;
-pub use common::{decode_content, none};
+pub use common::{decode_content, none, FetchDeserializable};
 
 mod entity;
 pub use self::entity::*;
