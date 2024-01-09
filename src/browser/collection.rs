@@ -619,7 +619,7 @@ fn fetch<E, F, C, MV>(
         transfer_state.lock_mut().start_store();
     }
 
-    let context = CollectionFetchContext::<E, F> {
+    let context = CollectionFetchContext::<F> {
         logging,
         messages,
         paging,
@@ -640,7 +640,7 @@ async fn execute_collection_fetch<E, F, MV>(
         messages,
         paging,
         mut store_fn,
-    }: CollectionFetchContext<E, F>,
+    }: CollectionFetchContext<F>,
 ) -> StatusCode
 where
     E: Clone + DeserializeOwned,
@@ -701,7 +701,7 @@ impl<E, MV> Default for CollectionStore<E, MV> {
     }
 }
 
-struct CollectionFetchContext<E, F> {
+struct CollectionFetchContext<F> {
     logging: bool,
     messages: Messages,
     paging: Mutable<Paging>,
