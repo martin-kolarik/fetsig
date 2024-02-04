@@ -269,6 +269,42 @@ impl Messages {
     ) -> Self {
         Self::new().with(Self::ENTITY, true, message, Some(parameters))
     }
+
+    pub fn localize<T>(self, locale: &str, t: T) -> Self
+    where
+        T: Fn(&str, &str) -> SmolStr,
+    {
+        let localized = self
+            .messages
+            .lock_ref() 
+            .iter()
+            .map(|(key, messages)| {
+                let localized = messages
+                    .lock_ref()
+                    .iter()
+                    .map(|message| {
+                        Message::new(message.error(), {
+                            let mut localized = t(locale, message.text());
+                            if !message.parameters().is_empty() {
+                                let mut expanded = localized.to_string();
+                                for (index, parameter) in message.parameters().iter().enumerate() {
+                                    expanded = expanded.replace(&format!("{index}"), parameter);
+                                }
+                                localized = expanded.into();
+                            }
+                            localized
+                        })
+                    })
+                    .collect();
+                (key.clone(), MutableVec::new_with_values(localized))
+            })
+            .collect();
+
+        Self {
+            error: self.error,
+            messages: MutableBTreeMap::with_values(localized),
+        }
+    }
 }
 
 #[cfg(test)]
