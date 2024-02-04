@@ -16,15 +16,15 @@ use smol_str::SmolStr;
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Message {
     error: bool,
-    key: SmolStr,
+    text: SmolStr,
     parameters: Vec<SmolStr>,
 }
 
 impl Message {
-    fn new(error: bool, key: impl Into<SmolStr>) -> Self {
+    fn new(error: bool, text: impl Into<SmolStr>) -> Self {
         Self {
             error,
-            key: key.into(),
+            text: text.into(),
             parameters: Vec::new(),
         }
     }
@@ -42,8 +42,8 @@ impl Message {
         self.error
     }
 
-    pub fn key(&self) -> &str {
-        &self.key
+    pub fn text(&self) -> &str {
+        &self.text
     }
 
     pub fn parameters(&self) -> &[SmolStr] {
@@ -77,7 +77,7 @@ impl Debug for Messages {
                     f.write_str(", ")?;
                 }
                 f.write_str(if message.error { "E: " } else { "I: " })?;
-                f.write_str(message.key())?;
+                f.write_str(message.text())?;
             }
             f.write_str("]")?;
         }
@@ -96,6 +96,8 @@ impl Deref for Messages {
 impl Messages {
     pub const SERVICE: &'static str = "service";
     pub const ENTITY: &'static str = "entity";
+
+    pub const NONE_PARS: Option<[&'static str; 0]> = None;
 
     pub fn new() -> Messages {
         Self {
@@ -117,16 +119,18 @@ impl Messages {
     }
 
     pub fn into_inner(self) -> BTreeMap<SmolStr, MutableVec<Message>> {
-        self.messages.lock_ref().deref().clone()
+        self.messages.lock_ref().deref().clone() // TODO: mem::replace? mem::take?
     }
 
     #[must_use]
-    fn with<K, M>(self, key: K, error: bool, message: M) -> Self
-    where
-        K: Into<SmolStr>,
-        M: Into<SmolStr>,
-    {
-        self.add(key, error, message);
+    fn with(
+        self,
+        key: impl Into<SmolStr>,
+        error: bool,
+        text: impl Into<SmolStr>,
+        parameters: Option<impl IntoIterator<Item = impl Into<SmolStr>>>,
+    ) -> Self {
+        self.add(key, error, text, parameters);
         self
     }
 
@@ -152,25 +156,37 @@ impl Messages {
         self.error.set_neq(false);
     }
 
-    pub fn set<K, M>(&self, key: K, error: bool, message: M)
-    where
-        K: Into<SmolStr>,
-        M: Into<SmolStr>,
-    {
-        self.messages.lock_mut().insert_cloned(
-            key.into(),
-            MutableVec::new_with_values(vec![Message::new(error, message)]),
-        );
+    pub fn set<K, M>(
+        &self,
+        key: impl Into<SmolStr>,
+        error: bool,
+        message: impl Into<SmolStr>,
+        parameters: Option<impl IntoIterator<Item = impl Into<SmolStr>>>,
+    ) {
+        let message = if let Some(parameters) = parameters {
+            Message::new(error, message).with_parameters(parameters)
+        } else {
+            Message::new(error, message)
+        };
+        self.messages
+            .lock_mut()
+            .insert_cloned(key.into(), MutableVec::new_with_values(vec![message]));
         self.error.set_neq(error);
     }
 
-    pub fn add<K, M>(&self, key: K, error: bool, message: M)
-    where
-        K: Into<SmolStr>,
-        M: Into<SmolStr>,
-    {
+    pub fn add(
+        &self,
+        key: impl Into<SmolStr>,
+        error: bool,
+        text: impl Into<SmolStr>,
+        parameters: Option<impl IntoIterator<Item = impl Into<SmolStr>>>,
+    ) {
         let key = key.into();
-        let message = Message::new(error, message);
+        let message = if let Some(parameters) = parameters {
+            Message::new(error, text).with_parameters(parameters)
+        } else {
+            Message::new(error, text)
+        };
         let mut lock = self.messages.lock_mut();
         if let Some(messages) = lock.get(&key) {
             messages.lock_mut().push_cloned(message);
@@ -217,27 +233,41 @@ impl Messages {
     }
 
     pub fn add_entity_error(&self, message: impl Into<SmolStr>) {
-        self.add(Self::ENTITY, true, message)
+        self.add(Self::ENTITY, true, message, Self::NONE_PARS)
     }
 
     pub fn add_entity_info(&self, message: impl Into<SmolStr>) {
-        self.add(Self::ENTITY, false, message)
+        self.add(Self::ENTITY, false, message, Self::NONE_PARS)
     }
 
     pub fn add_service_error(&self, message: impl Into<SmolStr>) {
-        self.add(Self::SERVICE, true, message)
+        self.add(Self::SERVICE, true, message, Self::NONE_PARS)
     }
 
     pub fn add_service_info(&self, message: impl Into<SmolStr>) {
-        self.add(Self::SERVICE, false, message)
+        self.add(Self::SERVICE, false, message, Self::NONE_PARS)
     }
 
     pub fn from_service_error(message: impl Into<SmolStr>) -> Self {
-        Self::new().with(Self::SERVICE, true, message)
+        Self::new().with(Self::SERVICE, true, message, Self::NONE_PARS)
+    }
+
+    pub fn from_service_error_pars(
+        message: impl Into<SmolStr>,
+        parameters: impl IntoIterator<Item = impl Into<SmolStr>>,
+    ) -> Self {
+        Self::new().with(Self::SERVICE, true, message, Some(parameters))
     }
 
     pub fn from_entity_error(message: impl Into<SmolStr>) -> Self {
-        Self::new().with(Self::ENTITY, true, message)
+        Self::new().with(Self::ENTITY, true, message, Self::NONE_PARS)
+    }
+
+    pub fn from_entity_error_pars(
+        message: impl Into<SmolStr>,
+        parameters: impl IntoIterator<Item = impl Into<SmolStr>>,
+    ) -> Self {
+        Self::new().with(Self::ENTITY, true, message, Some(parameters))
     }
 }
 
