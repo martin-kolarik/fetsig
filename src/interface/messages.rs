@@ -11,7 +11,7 @@ use futures_signals::{
 };
 use futures_signals_ext::SignalExtMapOption;
 use serde::{Deserialize, Serialize};
-use smol_str::SmolStr;
+use smol_str::{SmolStr, ToSmolStr};
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Message {
@@ -21,20 +21,20 @@ pub struct Message {
 }
 
 impl Message {
-    fn new(error: bool, text: impl Into<SmolStr>) -> Self {
+    fn new(error: bool, text: impl ToSmolStr) -> Self {
         Self {
             error,
-            text: text.into(),
+            text: text.to_smolstr(),
             parameters: Vec::new(),
         }
     }
 
     #[must_use]
-    pub fn with_parameters(
-        mut self,
-        parameters: impl IntoIterator<Item = impl Into<SmolStr>>,
-    ) -> Self {
-        self.parameters = parameters.into_iter().map(Into::into).collect();
+    pub fn with_parameters(mut self, parameters: impl IntoIterator<Item = impl ToSmolStr>) -> Self {
+        self.parameters = parameters
+            .into_iter()
+            .map(|item| item.to_smolstr())
+            .collect();
         self
     }
 
@@ -123,10 +123,10 @@ impl Messages {
     #[must_use]
     fn with(
         self,
-        key: impl Into<SmolStr>,
+        key: impl ToSmolStr,
         error: bool,
-        text: impl Into<SmolStr>,
-        parameters: impl IntoIterator<Item = impl Into<SmolStr>>,
+        text: impl ToSmolStr,
+        parameters: impl IntoIterator<Item = impl ToSmolStr>,
     ) -> Self {
         self.add_pars(key, error, text, parameters);
         self
@@ -154,36 +154,36 @@ impl Messages {
         self.error.set_neq(false);
     }
 
-    pub fn set(&self, key: impl Into<SmolStr>, error: bool, message: impl Into<SmolStr>) {
+    pub fn set(&self, key: impl ToSmolStr, error: bool, message: impl ToSmolStr) {
         self.set_pars(key, error, message, [""; 0]);
     }
 
     pub fn set_pars(
         &self,
-        key: impl Into<SmolStr>,
+        key: impl ToSmolStr,
         error: bool,
-        text: impl Into<SmolStr>,
-        parameters: impl IntoIterator<Item = impl Into<SmolStr>>,
+        text: impl ToSmolStr,
+        parameters: impl IntoIterator<Item = impl ToSmolStr>,
     ) {
         let message = Message::new(error, text).with_parameters(parameters);
         self.messages
             .lock_mut()
-            .insert_cloned(key.into(), MutableVec::new_with_values(vec![message]));
+            .insert_cloned(key.to_smolstr(), MutableVec::new_with_values(vec![message]));
         self.error.set_neq(error);
     }
 
-    pub fn add(&self, key: impl Into<SmolStr>, error: bool, text: impl Into<SmolStr>) {
+    pub fn add(&self, key: impl ToSmolStr, error: bool, text: impl ToSmolStr) {
         self.add_pars(key, error, text, [""; 0]);
     }
 
     pub fn add_pars(
         &self,
-        key: impl Into<SmolStr>,
+        key: impl ToSmolStr,
         error: bool,
-        text: impl Into<SmolStr>,
-        parameters: impl IntoIterator<Item = impl Into<SmolStr>>,
+        text: impl ToSmolStr,
+        parameters: impl IntoIterator<Item = impl ToSmolStr>,
     ) {
-        let key = key.into();
+        let key = key.to_smolstr();
         let message = Message::new(error, text).with_parameters(parameters);
         let mut lock = self.messages.lock_mut();
         if let Some(messages) = lock.get(&key) {
@@ -194,35 +194,32 @@ impl Messages {
         self.error.set_neq(self.error.get() || error);
     }
 
-    pub fn clear<K>(&self, key: K)
-    where
-        K: Into<SmolStr>,
-    {
-        self.messages.lock_mut().remove(&key.into());
+    pub fn clear(&self, key: impl ToSmolStr) {
+        self.messages.lock_mut().remove(&key.to_smolstr());
         self.evaluate_error();
     }
 
-    pub fn anything_for_key_signal(&self, key: impl Into<SmolStr>) -> impl Signal<Item = bool> {
+    pub fn anything_for_key_signal(&self, key: impl ToSmolStr) -> impl Signal<Item = bool> {
         self.messages
             .signal_map_cloned()
-            .key_cloned(key.into())
+            .key_cloned(key.to_smolstr())
             .map_some_default(|messages| !messages.lock_ref().is_empty())
     }
 
-    pub fn error_for_key_signal(&self, key: impl Into<SmolStr>) -> impl Signal<Item = bool> {
+    pub fn error_for_key_signal(&self, key: impl ToSmolStr) -> impl Signal<Item = bool> {
         self.messages
             .signal_map_cloned()
-            .key_cloned(key.into())
+            .key_cloned(key.to_smolstr())
             .map_some_default(|messages| messages.lock_ref().iter().any(Message::error))
     }
 
     pub fn messages_for_key_signal_vec(
         &self,
-        key: impl Into<SmolStr>,
+        key: impl ToSmolStr,
     ) -> impl SignalVec<Item = Message> {
         self.messages
             .signal_map_cloned()
-            .key_cloned(key.into())
+            .key_cloned(key.to_smolstr())
             .switch_signal_vec(|messages| {
                 messages
                     .map(|messages| messages.signal_vec_cloned())
@@ -230,40 +227,40 @@ impl Messages {
             })
     }
 
-    pub fn add_entity_error(&self, message: impl Into<SmolStr>) {
+    pub fn add_entity_error(&self, message: impl ToSmolStr) {
         self.add(Self::ENTITY, true, message)
     }
 
-    pub fn add_entity_info(&self, message: impl Into<SmolStr>) {
+    pub fn add_entity_info(&self, message: impl ToSmolStr) {
         self.add(Self::ENTITY, false, message)
     }
 
-    pub fn add_service_error(&self, message: impl Into<SmolStr>) {
+    pub fn add_service_error(&self, message: impl ToSmolStr) {
         self.add(Self::SERVICE, true, message)
     }
 
-    pub fn add_service_info(&self, message: impl Into<SmolStr>) {
+    pub fn add_service_info(&self, message: impl ToSmolStr) {
         self.add(Self::SERVICE, false, message)
     }
 
-    pub fn from_service_error(message: impl Into<SmolStr>) -> Self {
+    pub fn from_service_error(message: impl ToSmolStr) -> Self {
         Self::new().with(Self::SERVICE, true, message, [""; 0])
     }
 
     pub fn from_service_error_pars(
-        message: impl Into<SmolStr>,
-        parameters: impl IntoIterator<Item = impl Into<SmolStr>>,
+        message: impl ToSmolStr,
+        parameters: impl IntoIterator<Item = impl ToSmolStr>,
     ) -> Self {
         Self::new().with(Self::SERVICE, true, message, parameters)
     }
 
-    pub fn from_entity_error(message: impl Into<SmolStr>) -> Self {
+    pub fn from_entity_error(message: impl ToSmolStr) -> Self {
         Self::new().with(Self::ENTITY, true, message, [""; 0])
     }
 
     pub fn from_entity_error_pars(
-        message: impl Into<SmolStr>,
-        parameters: impl IntoIterator<Item = impl Into<SmolStr>>,
+        message: impl ToSmolStr,
+        parameters: impl IntoIterator<Item = impl ToSmolStr>,
     ) -> Self {
         Self::new().with(Self::ENTITY, true, message, parameters)
     }
