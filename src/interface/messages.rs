@@ -97,8 +97,6 @@ impl Messages {
     pub const SERVICE: &'static str = "service";
     pub const ENTITY: &'static str = "entity";
 
-    pub const NONE_PARS: Option<[&'static str; 0]> = None;
-
     pub fn new() -> Messages {
         Self {
             error: Mutable::new(false),
@@ -128,9 +126,9 @@ impl Messages {
         key: impl Into<SmolStr>,
         error: bool,
         text: impl Into<SmolStr>,
-        parameters: Option<impl IntoIterator<Item = impl Into<SmolStr>>>,
+        parameters: impl IntoIterator<Item = impl Into<SmolStr>>,
     ) -> Self {
-        self.add(key, error, text, parameters);
+        self.add_pars(key, error, text, parameters);
         self
     }
 
@@ -156,37 +154,37 @@ impl Messages {
         self.error.set_neq(false);
     }
 
-    pub fn set<K, M>(
+    pub fn set(&self, key: impl Into<SmolStr>, error: bool, message: impl Into<SmolStr>) {
+        self.set_pars(key, error, message, [""; 0]);
+    }
+
+    pub fn set_pars(
         &self,
         key: impl Into<SmolStr>,
         error: bool,
-        message: impl Into<SmolStr>,
-        parameters: Option<impl IntoIterator<Item = impl Into<SmolStr>>>,
+        text: impl Into<SmolStr>,
+        parameters: impl IntoIterator<Item = impl Into<SmolStr>>,
     ) {
-        let message = if let Some(parameters) = parameters {
-            Message::new(error, message).with_parameters(parameters)
-        } else {
-            Message::new(error, message)
-        };
+        let message = Message::new(error, text).with_parameters(parameters);
         self.messages
             .lock_mut()
             .insert_cloned(key.into(), MutableVec::new_with_values(vec![message]));
         self.error.set_neq(error);
     }
 
-    pub fn add(
+    pub fn add(&self, key: impl Into<SmolStr>, error: bool, text: impl Into<SmolStr>) {
+        self.add_pars(key, error, text, [""; 0]);
+    }
+
+    pub fn add_pars(
         &self,
         key: impl Into<SmolStr>,
         error: bool,
         text: impl Into<SmolStr>,
-        parameters: Option<impl IntoIterator<Item = impl Into<SmolStr>>>,
+        parameters: impl IntoIterator<Item = impl Into<SmolStr>>,
     ) {
         let key = key.into();
-        let message = if let Some(parameters) = parameters {
-            Message::new(error, text).with_parameters(parameters)
-        } else {
-            Message::new(error, text)
-        };
+        let message = Message::new(error, text).with_parameters(parameters);
         let mut lock = self.messages.lock_mut();
         if let Some(messages) = lock.get(&key) {
             messages.lock_mut().push_cloned(message);
@@ -233,50 +231,50 @@ impl Messages {
     }
 
     pub fn add_entity_error(&self, message: impl Into<SmolStr>) {
-        self.add(Self::ENTITY, true, message, Self::NONE_PARS)
+        self.add(Self::ENTITY, true, message)
     }
 
     pub fn add_entity_info(&self, message: impl Into<SmolStr>) {
-        self.add(Self::ENTITY, false, message, Self::NONE_PARS)
+        self.add(Self::ENTITY, false, message)
     }
 
     pub fn add_service_error(&self, message: impl Into<SmolStr>) {
-        self.add(Self::SERVICE, true, message, Self::NONE_PARS)
+        self.add(Self::SERVICE, true, message)
     }
 
     pub fn add_service_info(&self, message: impl Into<SmolStr>) {
-        self.add(Self::SERVICE, false, message, Self::NONE_PARS)
+        self.add(Self::SERVICE, false, message)
     }
 
     pub fn from_service_error(message: impl Into<SmolStr>) -> Self {
-        Self::new().with(Self::SERVICE, true, message, Self::NONE_PARS)
+        Self::new().with(Self::SERVICE, true, message, [""; 0])
     }
 
     pub fn from_service_error_pars(
         message: impl Into<SmolStr>,
         parameters: impl IntoIterator<Item = impl Into<SmolStr>>,
     ) -> Self {
-        Self::new().with(Self::SERVICE, true, message, Some(parameters))
+        Self::new().with(Self::SERVICE, true, message, parameters)
     }
 
     pub fn from_entity_error(message: impl Into<SmolStr>) -> Self {
-        Self::new().with(Self::ENTITY, true, message, Self::NONE_PARS)
+        Self::new().with(Self::ENTITY, true, message, [""; 0])
     }
 
     pub fn from_entity_error_pars(
         message: impl Into<SmolStr>,
         parameters: impl IntoIterator<Item = impl Into<SmolStr>>,
     ) -> Self {
-        Self::new().with(Self::ENTITY, true, message, Some(parameters))
+        Self::new().with(Self::ENTITY, true, message, parameters)
     }
 
-    pub fn localize<T>(self, locale: &str, t: T) -> Self
+    pub fn localize<T>(self, t: T) -> Self
     where
-        T: Fn(&str, &str) -> SmolStr,
+        T: Fn(&str) -> SmolStr,
     {
         let localized = self
             .messages
-            .lock_ref() 
+            .lock_ref()
             .iter()
             .map(|(key, messages)| {
                 let localized = messages
@@ -284,7 +282,7 @@ impl Messages {
                     .iter()
                     .map(|message| {
                         Message::new(message.error(), {
-                            let mut localized = t(locale, message.text());
+                            let mut localized = t(message.text());
                             if !message.parameters().is_empty() {
                                 let mut expanded = localized.to_string();
                                 for (index, parameter) in message.parameters().iter().enumerate() {
