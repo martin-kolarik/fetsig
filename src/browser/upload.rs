@@ -59,7 +59,7 @@ impl UploadStore {
 
     pub fn store<C>(&self, request: Request<'_>, response_messages: Messages, result_callback: C)
     where
-        C: Fn(StatusCode) + 'static,
+        C: FnOnce(StatusCode) + 'static,
     {
         self.do_store::<String, _>(request, None, response_messages, result_callback)
     }
@@ -72,7 +72,7 @@ impl UploadStore {
         result_callback: C,
     ) where
         R: DeserializeOwned + 'static,
-        C: Fn(StatusCode) + 'static,
+        C: FnOnce(StatusCode) + 'static,
     {
         self.do_store::<_, _>(
             request,
@@ -89,7 +89,7 @@ impl UploadStore {
         response_messages: Messages,
         result_callback: C,
     ) where
-        C: Fn(StatusCode) + 'static,
+        C: FnOnce(StatusCode) + 'static,
         R: DeserializeOwned + 'static,
     {
         if request.logging() {
