@@ -49,6 +49,27 @@ impl Message {
     pub fn parameters(&self) -> &[SmolStr] {
         &self.parameters
     }
+
+    pub fn localize<T>(&self, t: T) -> Self
+    where
+        T: Fn(&str) -> SmolStr,
+    {
+        let localized = t(self.text());
+        let localized = if self.parameters().is_empty() {
+            localized
+        } else {
+            let mut expanded = localized.to_string();
+            for (index, parameter) in self.parameters().iter().enumerate() {
+                expanded = expanded.replace(&format!("{{{index}}}"), parameter);
+            }
+            expanded.into()
+        };
+        Self {
+            error: self.error,
+            text: localized,
+            parameters: vec![],
+        }
+    }
 }
 
 #[derive(Default, Clone, Serialize, Deserialize)]
@@ -277,19 +298,7 @@ impl Messages {
                 let localized = messages
                     .lock_ref()
                     .iter()
-                    .map(|message| {
-                        Message::new(message.error(), {
-                            let mut localized = t(message.text());
-                            if !message.parameters().is_empty() {
-                                let mut expanded = localized.to_string();
-                                for (index, parameter) in message.parameters().iter().enumerate() {
-                                    expanded = expanded.replace(&format!("{index}"), parameter);
-                                }
-                                localized = expanded.into();
-                            }
-                            localized
-                        })
-                    })
+                    .map(|message| message.localize(&t))
                     .collect();
                 (key.clone(), MutableVec::new_with_values(localized))
             })
