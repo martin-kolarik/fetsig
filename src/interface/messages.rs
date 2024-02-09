@@ -146,7 +146,7 @@ impl Messages {
         self.evaluate_error();
     }
 
-    pub fn merge(&self, with: Messages) {
+    pub fn extend(&self, with: Messages) {
         let mut this = self.lock_mut();
         let mut from = with.lock_mut();
         let from_keys = from.keys().cloned().collect::<Vec<_>>();
