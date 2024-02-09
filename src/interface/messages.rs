@@ -146,6 +146,20 @@ impl Messages {
         self.evaluate_error();
     }
 
+    pub fn merge(&self, with: Messages) {
+        let mut this = self.lock_mut();
+        let from = with.lock_ref();
+        for (key, messages) in from.iter() {
+            if let Some(this_messages) = this.get(key) {
+                for message in messages.lock_ref().iter() {
+                    this_messages.lock_mut().push_cloned(message.clone());
+                }
+            } else {
+                this.insert_cloned(key.clone(), messages.clone());
+            }
+        }
+    }
+
     pub fn from_inner(inner: BTreeMap<SmolStr, MutableVec<Message>>) -> Self {
         Self {
             error: Mutable::new(false),
