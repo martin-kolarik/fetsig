@@ -9,7 +9,7 @@ use futures_signals::{
     signal_map::{MutableBTreeMap, SignalMapExt},
     signal_vec::{MutableVec, SignalVec},
 };
-use futures_signals_ext::SignalExtMapOption;
+use futures_signals_ext::{MutableVecExt, SignalExtMapOption};
 use serde::{Deserialize, Serialize};
 use smol_str::{SmolStr, ToSmolStr};
 
@@ -148,14 +148,16 @@ impl Messages {
 
     pub fn merge(&self, with: Messages) {
         let mut this = self.lock_mut();
-        let from = with.lock_ref();
-        for (key, messages) in from.iter() {
-            if let Some(this_messages) = this.get(key) {
-                for message in messages.lock_ref().iter() {
-                    this_messages.lock_mut().push_cloned(message.clone());
-                }
+        let mut from = with.lock_mut();
+        let from_keys = from.keys().cloned().collect::<Vec<_>>();
+        for (key, messages) in from_keys.into_iter().map(|key| {
+            let messages = from.remove(&key).unwrap_or_default();
+            (key, messages)
+        }) {
+            if let Some(this_messages) = this.get(&key) {
+                this_messages.extend_cloned(messages.lock_mut().drain(..));
             } else {
-                this.insert_cloned(key.clone(), messages.clone());
+                this.insert_cloned(key, messages);
             }
         }
     }
