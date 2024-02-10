@@ -9,7 +9,7 @@ use futures_signals::{
     signal_map::{MutableBTreeMap, SignalMapExt},
     signal_vec::{MutableVec, SignalVec},
 };
-use futures_signals_ext::{MutableVecExt, SignalExtMapOption};
+use futures_signals_ext::{MutableExt, MutableVecExt, SignalExtMapOption};
 use serde::{Deserialize, Serialize};
 use smol_str::{SmolStr, ToSmolStr};
 
@@ -147,6 +147,7 @@ impl Messages {
     }
 
     pub fn extend(&self, with: Messages) {
+        self.error.inspect_mut(|this| *this |= with.error.get());
         let mut this = self.lock_mut();
         let mut from = with.lock_mut();
         let from_keys = from.keys().cloned().collect::<Vec<_>>();
