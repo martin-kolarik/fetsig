@@ -1,6 +1,6 @@
 [package]
 name = "fetsig"
-version = "0.1.8"
+version = "0.1.9"
 authors = ["martin.kolarik@smartcontrol.cz"]
 description = "Web-sys based browser fetch library using futures-signals with optional MAC."
 edition = "2021"
@@ -23,7 +23,7 @@ json = ["bytes", "serde_json", "serde_with", "ufmt"]
 postcard = ["bytes", "dep:postcard", "ufmt"]
 
 [dependencies]
-artwrap = { git = "https://github.com/martin-kolarik/artwrap.git" }
+artwrap = { version = "^0.1" }
 base64 = { version = "^0.21", default-features = false, features = [
     "std",
 ], optional = true }

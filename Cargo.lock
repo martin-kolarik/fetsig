@@ -5,7 +5,8 @@ version = 3
 [[package]]
 name = "artwrap"
 version = "0.1.0"
-source = "git+https://github.com/martin-kolarik/artwrap.git#ccf1a6ad6e6fd6bfcddb52b11ceabfcf08edfa91"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8dec1cb215d2166c8478605f1a9decf38e8b23eabe2ad0557490b140f66ced5f"
 dependencies = [
  "async-channel",
  "async-global-executor",
@@ -259,7 +260,7 @@ checksum = "25cbce373ec4653f1a01a31e8a5e5ec0c622dc27ff9c4e6606eefef5cbbed4a5"
 
 [[package]]
 name = "fetsig"
-version = "0.1.8"
+version = "0.1.9"
 dependencies = [
  "artwrap",
  "base64",
