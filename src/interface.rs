@@ -13,9 +13,6 @@ pub use serialize::*;
 mod statuscode;
 pub use statuscode::*;
 
-mod timeout;
-pub use timeout::*;
-
 mod transport;
 pub use transport::*;
 

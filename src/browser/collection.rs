@@ -1,5 +1,6 @@
 use std::{cmp, marker::PhantomData};
 
+use artwrap::spawn_local;
 use futures_signals::{
     map_ref,
     signal::{Mutable, Signal, SignalExt},
@@ -10,7 +11,6 @@ use futures_signals::{
 use futures_signals_ext::{MutableExt, MutableVecExt};
 use log::{debug, error, trace, warn};
 use serde::{de::DeserializeOwned, Serialize};
-use wasm_bindgen_futures::spawn_local;
 
 #[cfg(feature = "json")]
 use crate::JSONSerialize;

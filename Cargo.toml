@@ -13,7 +13,6 @@ default = ["browser", "json", "postcard"]
 browser = [
     "base64",
     "bytes",
-    "gloo-timers",
     "js-sys",
     "ufmt",
     "wasm-bindgen",
@@ -24,6 +23,7 @@ json = ["bytes", "serde_json", "serde_with", "ufmt"]
 postcard = ["bytes", "dep:postcard", "ufmt"]
 
 [dependencies]
+artwrap = { git = "https://github.com/martin-kolarik/artwrap.git" }
 base64 = { version = "^0.21", default-features = false, features = [
     "std",
 ], optional = true }
@@ -41,10 +41,8 @@ futures-signals-ext = { version = "^0.1", default-features = false, features = [
     "option",
     "spawn-local",
 ] }
-gloo-timers = { version = "^0.3", features = ["futures"], optional = true }
 js-sys = { version = "^0.3", optional = true }
 log = { version = "^0.4", default-features = false }
-pin-project-lite = { version = "^0.2" }
 postcard = { version = "^1.0", optional = true }
 serde = { version = "^1.0", features = ["derive"] }
 serde_json = { version = "^1.0", optional = true }

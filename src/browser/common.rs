@@ -1,13 +1,13 @@
 use std::time::Duration;
 
+use artwrap::{timeout_future, TimeoutFutureExt};
 use base64::{engine::general_purpose, Engine};
-use gloo_timers::future::TimeoutFuture;
 use js_sys::{JsString, Uint8Array};
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{AbortController, AbortSignal, Response, ResponseType};
 
-use crate::{uformat, MacVerify, MediaType, StatusCode, TimerFutureExt, HEADER_SIGNATURE};
+use crate::{uformat, MacVerify, MediaType, StatusCode, HEADER_SIGNATURE};
 
 #[cfg(feature = "json")]
 use crate::JSONDeserialize;
@@ -80,11 +80,7 @@ impl PendingFetch {
     }
 
     pub async fn wait_completion(self) -> DecodedResponse<Response> {
-        let timeout = TimeoutFuture::new(
-            self.timeout
-                .unwrap_or_else(|| Duration::from_secs(900))
-                .as_millis() as u32,
-        );
+        let timeout = timeout_future(self.timeout.unwrap_or_else(|| Duration::from_secs(900)));
         match self.request_future.timeout(timeout).await {
             Ok(Ok(response)) => {
                 let response = response.unchecked_into::<Response>();
