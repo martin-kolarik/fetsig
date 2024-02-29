@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use artwrap::{timeout_future, TimeoutFutureExt};
+use artwrap::TimeoutFutureExt;
 use base64::{engine::general_purpose, Engine};
 use js_sys::{JsString, Uint8Array};
 use wasm_bindgen::{JsCast, JsValue};
@@ -80,8 +80,11 @@ impl PendingFetch {
     }
 
     pub async fn wait_completion(self) -> DecodedResponse<Response> {
-        let timeout = timeout_future(self.timeout.unwrap_or_else(|| Duration::from_secs(900)));
-        match self.request_future.timeout(timeout).await {
+        match self
+            .request_future
+            .timeout(self.timeout.unwrap_or_else(|| Duration::from_secs(900)))
+            .await
+        {
             Ok(Ok(response)) => {
                 let response = response.unchecked_into::<Response>();
                 if !response.ok() && matches!(response.type_(), ResponseType::Error) {
