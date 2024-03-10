@@ -33,11 +33,11 @@ pub struct EntityStore<E, MV = NoMac> {
 }
 
 impl<E, MV> EntityStore<E, MV> {
-    pub fn new_empty() -> Self {
+    pub fn new(entity: Option<E>) -> Self {
         Self {
             transfer_state: Mutable::new(TransferState::Empty),
             messages: Messages::new(),
-            entity: MutableOption::new(None),
+            entity: MutableOption::new(entity),
             pmv: PhantomData,
         }
     }
@@ -46,42 +46,26 @@ impl<E, MV> EntityStore<E, MV> {
     where
         E: Default,
     {
-        Self {
-            transfer_state: Mutable::new(TransferState::Empty),
-            messages: Messages::new(),
-            entity: MutableOption::new_default(),
-            pmv: PhantomData,
-        }
+        Self::new(Some(E::default()))
     }
 
-    pub fn new_value(entity: E) -> Self {
-        Self {
-            transfer_state: Mutable::new(TransferState::Empty),
-            messages: Messages::new(),
-            entity: MutableOption::new_some(entity),
-            pmv: PhantomData,
-        }
-    }
-
-    pub fn reset_to_empty(&self) {
+    pub fn reset(&self, entity: Option<E>) {
         self.transfer_state.set(TransferState::Empty);
         self.messages.clear_all();
-        self.reset();
+        self.set(entity);
     }
 
     pub fn reset_to_default(&self)
     where
         E: Default,
     {
-        self.transfer_state.set(TransferState::Empty);
-        self.messages.clear_all();
-        self.set(Some(E::default()));
+        self.reset(Some(E::default()));
     }
 
-    pub fn reset_to_value(&self, entity: E) {
+    pub fn replace(&self, entity: Option<E>) -> Option<E> {
         self.transfer_state.set(TransferState::Empty);
         self.messages.clear_all();
-        self.set(Some(entity));
+        self.entity.replace(entity)
     }
 
     pub fn empty(&self) -> bool {
@@ -106,10 +90,6 @@ impl<E, MV> EntityStore<E, MV> {
 
     pub fn transfer_state(&self) -> &Mutable<TransferState> {
         &self.transfer_state
-    }
-
-    pub fn set_transfer_state(&self, transfer_state: TransferState) {
-        self.transfer_state.set_neq(transfer_state);
     }
 
     pub fn reset_transfer_error(&self) {
@@ -341,7 +321,8 @@ impl<E, MV> EntityStore<E, MV> {
 
     pub fn set_externally_loaded(&self, entity: Option<E>) {
         self.entity.set(entity);
-        self.set_transfer_state(TransferState::Loaded(StatusCode::Ok));
+        self.transfer_state
+            .set_neq(TransferState::Loaded(StatusCode::Ok));
     }
 
     pub fn set_inner<I>(&self, entity: Option<I>)
@@ -363,14 +344,6 @@ impl<E, MV> EntityStore<E, MV> {
         E: Inner<I>,
     {
         self.set_externally_loaded(entity.map(E::from_inner));
-    }
-
-    pub fn reset(&self) {
-        self.entity.set(None);
-    }
-
-    pub fn replace(&self, entity: Option<E>) -> Option<E> {
-        self.entity.replace(entity)
     }
 }
 
@@ -735,7 +708,7 @@ where
 
 impl<E, MV> Default for EntityStore<E, MV> {
     fn default() -> Self {
-        Self::new_empty()
+        Self::new(None)
     }
 }
 

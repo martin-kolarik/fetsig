@@ -39,14 +39,8 @@ pub struct CollectionStore<E, MV = NoMac> {
 }
 
 impl<E, MV> CollectionStore<E, MV> {
-    pub fn new_empty() -> Self {
-        Self {
-            transfer_state: Mutable::new(TransferState::Empty),
-            messages: Messages::new(),
-            paging: Mutable::new(Paging::default()),
-            collection: MutableVec::new_with_values(vec![]),
-            pmv: PhantomData,
-        }
+    pub fn new() -> Self {
+        Self::new_value(vec![])
     }
 
     pub fn new_value(collection: Vec<E>) -> Self {
@@ -59,8 +53,11 @@ impl<E, MV> CollectionStore<E, MV> {
         }
     }
 
-    pub fn reset_to_empty(&self) {
-        self.init(TransferState::Empty);
+    pub fn reset(&self) {
+        self.transfer_state.set_neq(TransferState::Empty);
+        self.messages.clear_all();
+        self.paging.set(Paging::default());
+        self.collection.lock_mut().clear();
     }
 
     pub fn invalidate(&self) {
@@ -71,23 +68,8 @@ impl<E, MV> CollectionStore<E, MV> {
         self.transfer_state.get()
     }
 
-    pub fn set_transfer_state(&self, transfer_state: TransferState) {
-        self.transfer_state.set_neq(transfer_state);
-    }
-
     pub fn reset_transfer_error(&self) {
         self.transfer_state.lock_mut().reset_error();
-    }
-
-    fn init(&self, transfer_state: TransferState) {
-        self.transfer_state.set_neq(transfer_state);
-        self.messages.clear_all();
-        self.paging.set(Paging::default());
-        self.reset();
-    }
-
-    pub fn reset(&self) {
-        self.collection.lock_mut().clear()
     }
 
     pub fn loaded(&self) -> bool {
@@ -697,7 +679,7 @@ where
 
 impl<E, MV> Default for CollectionStore<E, MV> {
     fn default() -> Self {
-        Self::new_empty()
+        Self::new()
     }
 }
 

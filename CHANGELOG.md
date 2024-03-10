@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file. The
 format is based on [Keep a Changelog], and this project aims to follow
 [Semantic Versioning].
 
+## [0.2.0] - 2024-03-10
+
+### Changed
+
+- refactoring of reset functions in both entity and collection stores
+
 ## [0.1.10] - 2024-02-29
 
 ### Changed
