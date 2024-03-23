@@ -92,6 +92,10 @@ impl<E, MV> EntityStore<E, MV> {
         &self.transfer_state
     }
 
+    pub fn set_transfer_state(&self, transfer_state: TransferState) {
+        self.transfer_state.set_neq(transfer_state);
+    }
+
     pub fn reset_transfer_error(&self) {
         self.transfer_state.lock_mut().reset_error();
     }
