@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file. The
 format is based on [Keep a Changelog], and this project aims to follow
 [Semantic Versioning].
 
+## [0.2.4] - 2024-04-13
+
+### Changed
+
+- `CollectionStore::load_merge` merge function takes `Option<Vec>`, `None` is used when succeeded response does not contain collection
+
 ## [0.2.3] - 2024-04-03
 
 ### Changed
