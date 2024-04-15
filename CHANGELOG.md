@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file. The
 format is based on [Keep a Changelog], and this project aims to follow
 [Semantic Versioning].
 
+## [0.2.6] - 2024-04-15
+
+### Changed
+
+- final `CollectionStore::load_merge` `merge_fn` callback behavior: the callback is called only if response
+succeeds and the collection is present in the response (if the collection is not present, then the response
+is/may be considered incorrect.)
+
 ## [0.2.5] - 2024-04-15
 
 ### Changed
