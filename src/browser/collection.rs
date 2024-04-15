@@ -467,10 +467,12 @@ where
             self.transfer_state.clone(),
             self.messages.clone(),
             self.paging.clone(),
-            move |new| {
-                collection
-                    .lock_mut()
-                    .replace_cloned(new.unwrap_or_default())
+            move |status, new| {
+                if status.is_success() {
+                    if let Some(new) = new {
+                        collection.lock_mut().replace_cloned(new);
+                    }
+                }
             },
             result_callback,
         );
@@ -479,7 +481,7 @@ where
     pub fn load_merge<F, C>(&self, request: Request<'_>, merge_fn: F, result_callback: C)
     where
         E: DeserializeOwned + 'static,
-        F: FnMut(Option<Vec<E>>) + 'static,
+        F: FnMut(StatusCode, Option<Vec<E>>) + 'static,
         C: FnOnce(StatusCode) + 'static,
     {
         if request.logging() {
@@ -571,10 +573,12 @@ where
             self.transfer_state.clone(),
             self.messages.clone(),
             self.paging.clone(),
-            move |new| {
-                collection
-                    .lock_mut()
-                    .replace_cloned(new.unwrap_or_default())
+            move |status, new| {
+                if status.is_success() {
+                    if let Some(new) = new {
+                        collection.lock_mut().replace_cloned(new);
+                    }
+                }
             },
             result_callback,
         );
@@ -590,8 +594,8 @@ fn fetch<E, F, C, MV>(
     result_callback: C,
 ) where
     E: Clone + DeserializeOwned + 'static,
+    F: FnMut(StatusCode, Option<Vec<E>>) + 'static,
     C: FnOnce(StatusCode) + 'static,
-    F: FnMut(Option<Vec<E>>) + 'static,
     MV: MacVerify,
 {
     let logging = request.logging();
@@ -638,7 +642,7 @@ async fn execute_collection_fetch<E, F, MV>(
 ) -> StatusCode
 where
     E: Clone + DeserializeOwned,
-    F: FnMut(Option<Vec<E>>) + 'static,
+    F: FnMut(StatusCode, Option<Vec<E>>) + 'static,
     MV: MacVerify,
 {
     let mut result = execute_fetch::<CollectionResponse<E>, MV>(pending_fetch).await;
@@ -685,7 +689,12 @@ where
                         trace!("Request successfully fetched collection.");
                     }
                 }
-                store_fn(response_entities);
+                store_fn(status, response_entities);
+            } else {
+                if logging {
+                    trace!("Request failed to fetch collection.");
+                }
+                store_fn(status, None);
             }
             *paging.lock_mut() = response_paging;
             status

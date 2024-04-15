@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file. The
 format is based on [Keep a Changelog], and this project aims to follow
 [Semantic Versioning].
 
+## [0.2.5] - 2024-04-15
+
+### Changed
+
+- addition, `CollectionStore::load_merge` merge function takes `StatusCode` parameter with the result of the call
+
+### Fixed
+
+- storing received collection does not clear existing collection if the collection is missing in the response
+
 ## [0.2.4] - 2024-04-13
 
 ### Changed
