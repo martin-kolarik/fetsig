@@ -341,9 +341,8 @@ dependencies = [
 
 [[package]]
 name = "futures-signals-ext"
-version = "0.1.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b6506d7d2a6acb48b9ae7500cada84575d4d5246fcf6e1f65574238f5113a704"
+version = "0.2.0"
+source = "git+https://github.com/martin-kolarik/futures-signals-ext.git#abdf3ea51d00cd1ac239fee9bee0fc13e2223c68"
 dependencies = [
  "artwrap",
  "futures-signals",

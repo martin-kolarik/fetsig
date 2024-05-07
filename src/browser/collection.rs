@@ -1,4 +1,4 @@
-use std::{cmp, marker::PhantomData};
+use std::marker::PhantomData;
 
 use artwrap::spawn_local;
 use futures_signals::{
@@ -198,13 +198,6 @@ impl<E, MV> CollectionStore<E, MV> {
     {
         self.collection.map_vec_mut(f)
     }
-
-    pub fn remove<P>(&self, predicate: P) -> bool
-    where
-        P: FnMut(&E) -> bool,
-    {
-        self.collection.find_remove(predicate)
-    }
 }
 
 impl<E, MV> CollectionStore<E, MV>
@@ -248,18 +241,18 @@ where
         self.collection.find_set_or_add(predicate, item);
     }
 
-    pub fn find_set_or_insert<F>(&self, cmp: F, item: E)
-    where
-        F: FnMut(&E) -> cmp::Ordering,
-    {
-        self.collection.find_set_or_insert(cmp, item);
-    }
-
     pub fn replace(&self, values: Vec<E>) -> Vec<E> {
         let mut collection = self.collection.lock_mut();
         let current = collection.drain(..).collect();
         collection.replace(values);
         current
+    }
+
+    pub fn remove<P>(&self, predicate: P) -> bool
+    where
+        P: FnMut(&E) -> bool,
+    {
+        self.collection.find_remove(predicate)
     }
 
     pub fn signal_map<F, U>(&self, f: F) -> impl Signal<Item = U>
@@ -356,18 +349,18 @@ where
         self.collection.find_set_or_add_cloned(predicate, item);
     }
 
-    pub fn find_set_or_insert_cloned<F>(&self, cmp: F, item: E)
-    where
-        F: FnMut(&E) -> cmp::Ordering,
-    {
-        self.collection.find_set_or_insert_cloned(cmp, item);
-    }
-
     pub fn replace_cloned(&self, values: Vec<E>) -> Vec<E> {
         let mut collection = self.collection.lock_mut();
         let current = collection.drain(..).collect();
         collection.replace_cloned(values);
         current
+    }
+
+    pub fn remove_cloned<P>(&self, predicate: P) -> bool
+    where
+        P: FnMut(&E) -> bool,
+    {
+        self.collection.find_remove_cloned(predicate)
     }
 
     pub fn signal_map_cloned<F, U>(&self, f: F) -> impl Signal<Item = U>
