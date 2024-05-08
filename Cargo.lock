@@ -259,7 +259,7 @@ checksum = "658bd65b1cf4c852a3cc96f18a8ce7b5640f6b703f905c7d74532294c2a63984"
 
 [[package]]
 name = "fetsig"
-version = "0.2.6"
+version = "0.2.7"
 dependencies = [
  "artwrap",
  "base64",
@@ -342,7 +342,8 @@ dependencies = [
 [[package]]
 name = "futures-signals-ext"
 version = "0.2.0"
-source = "git+https://github.com/martin-kolarik/futures-signals-ext.git#abdf3ea51d00cd1ac239fee9bee0fc13e2223c68"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "91a4b23a7da2488f286aec36578dc29cf0a9f4150ecbc26fb80b2c7ba5d8f08d"
 dependencies = [
  "artwrap",
  "futures-signals",
