@@ -1,6 +1,5 @@
 use std::time::Duration;
 
-use bytes::Bytes;
 use js_sys::Uint8Array;
 use wasm_bindgen::JsValue;
 use wasm_bindgen_futures::JsFuture;
@@ -56,7 +55,7 @@ pub struct Request<'a> {
 }
 
 enum Body {
-    Bytes(Bytes),
+    Bytes(Vec<u8>),
     File(File),
 }
 
@@ -108,7 +107,7 @@ impl<'a> Request<'a> {
     }
 
     #[must_use]
-    pub fn with_body(mut self, body: Bytes) -> Self {
+    pub fn with_body(mut self, body: Vec<u8>) -> Self {
         self.body = Some(Body::Bytes(body));
         self
     }
@@ -235,7 +234,7 @@ impl<'a> Request<'a> {
         if let Some(body) = &self.body {
             let value = match body {
                 Body::Bytes(bytes) => {
-                    let array: Uint8Array = bytes.as_ref().into();
+                    let array: Uint8Array = bytes.as_slice().into();
                     JsValue::from(array)
                 }
                 Body::File(file) => JsValue::from(web_sys::File::from(file.clone())),

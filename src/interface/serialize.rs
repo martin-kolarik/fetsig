@@ -4,7 +4,6 @@ pub use json::*;
 mod json {
     use std::io::Write;
 
-    use bytes::{BufMut, Bytes, BytesMut};
     use serde::{de::DeserializeOwned, Serialize};
 
     use crate::uformat;
@@ -18,11 +17,11 @@ mod json {
                 .map_err(|e| uformat!("Serialization (json) failed: {}", e.to_string()))
         }
 
-        fn to_json(&self) -> Bytes {
-            let mut buffer = BytesMut::with_capacity(8192).writer();
+        fn to_json(&self) -> Vec<u8> {
+            let mut buffer = Vec::with_capacity(8192);
             match self.write_json(&mut buffer) {
-                Ok(_) => buffer.into_inner().freeze(),
-                Err(_) => Bytes::new(),
+                Ok(_) => buffer,
+                Err(_) => vec![],
             }
         }
     }
@@ -47,7 +46,6 @@ pub use postcard::*;
 mod postcard {
     use std::io::Write;
 
-    use bytes::{BufMut, Bytes, BytesMut};
     use postcard::{ser_flavors::Flavor, serialize_with_flavor};
     use serde::{de::DeserializeOwned, Serialize};
 
@@ -89,11 +87,11 @@ mod postcard {
                 .map_err(|e| uformat!("Serialization (postcard) failed: {}", e.to_string()))
         }
 
-        fn to_postcard(&self) -> Bytes {
-            let mut buffer = BytesMut::with_capacity(4096).writer();
+        fn to_postcard(&self) -> Vec<u8> {
+            let mut buffer = Vec::with_capacity(4096);
             match self.write_postcard(&mut buffer) {
-                Ok(_) => buffer.into_inner().freeze(),
-                Err(_) => Bytes::new(),
+                Ok(_) => buffer,
+                Err(_) => vec![],
             }
         }
     }
