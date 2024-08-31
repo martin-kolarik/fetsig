@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file. The
 format is based on [Keep a Changelog], and this project aims to follow
 [Semantic Versioning].
 
+## [0.3.1] - 2024-08-31
+
+### Changed
+
+- `web_sys::RequestInit` deprecations fixed
+
 ## [0.3.0] - 2024-07-20
 
 ### Changed

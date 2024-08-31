@@ -218,8 +218,8 @@ impl<'a> Request<'a> {
     }
 
     pub(crate) fn start(&self) -> Result<PendingFetch, String> {
-        let mut request_init = RequestInit::new();
-        request_init.method(match &self.method {
+        let request_init = RequestInit::new();
+        request_init.set_method(match &self.method {
             Method::Head => "HEAD",
             Method::Get => "GET",
             Method::Post => "POST",
@@ -229,7 +229,7 @@ impl<'a> Request<'a> {
         });
 
         let headers: Headers = self.try_into()?;
-        request_init.headers(&headers);
+        request_init.set_headers(&headers);
 
         if let Some(body) = &self.body {
             let value = match body {
@@ -239,11 +239,11 @@ impl<'a> Request<'a> {
                 }
                 Body::File(file) => JsValue::from(web_sys::File::from(file.clone())),
             };
-            request_init.body(Some(&value));
+            request_init.set_body(&value);
         }
 
         let abort = Abort::new()?;
-        request_init.signal(Some(&abort.signal()));
+        request_init.set_signal(Some(&abort.signal()));
 
         let promise = web_sys::window()
             .expect("window")
