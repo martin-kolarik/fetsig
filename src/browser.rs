@@ -1,4 +1,5 @@
 use js_sys::Error;
+use smol_str::{format_smolstr, SmolStr};
 use wasm_bindgen::JsValue;
 
 mod collection;
@@ -27,6 +28,6 @@ mod transferstate;
 mod upload;
 pub use upload::*;
 
-fn js_error(value: impl Into<JsValue>) -> String {
-    Error::from(value.into()).to_string().into()
+fn js_error(value: impl Into<JsValue>) -> SmolStr {
+    format_smolstr!("{}", Error::from(value.into()).to_string())
 }

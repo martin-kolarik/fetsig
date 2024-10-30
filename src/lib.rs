@@ -7,15 +7,30 @@ mod interface;
 pub use interface::*;
 
 pub use futures_signals_ext::*;
+use smol_str::SmolStrBuilder;
+
+use ufmt::uWrite;
 
 #[macro_export]
-macro_rules! uformat {
+macro_rules! uformat_smolstr {
     ($($arg:tt)*) => {{
         use ufmt;
-        let mut text = String::new();
-        ufmt::uwrite!(&mut text, $($arg)*).unwrap();
-        text
+        use smol_str::SmolStrBuilder;
+        let mut builder = crate::Builder(SmolStrBuilder::new());
+        ufmt::uwrite!(&mut builder, $($arg)*).unwrap();
+        builder.0.finish()
     }}
+}
+
+struct Builder(SmolStrBuilder);
+
+impl uWrite for Builder {
+    type Error = ();
+
+    fn write_str(&mut self, s: &str) -> Result<(), ()> {
+        self.0.push_str(s);
+        Ok(())
+    }
 }
 
 #[cfg(all(feature = "browser", not(feature = "json"), not(feature = "postcard")))]

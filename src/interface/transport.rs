@@ -85,8 +85,8 @@ impl<E> CollectionResponse<E> {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Paging {
     limit: usize,
-    prev: Option<String>,
-    next: Option<String>,
+    prev: Option<SmolStr>,
+    next: Option<SmolStr>,
 }
 
 impl Default for Paging {

@@ -11,7 +11,7 @@ use futures_signals::{
 };
 use futures_signals_ext::{MutableExt, MutableVecExt, SignalExtMapOption};
 use serde::{Deserialize, Serialize};
-use smol_str::{SmolStr, ToSmolStr};
+use smol_str::{format_smolstr, SmolStr, ToSmolStr};
 
 #[derive(Default, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 pub enum MessageType {
@@ -72,7 +72,7 @@ impl Message {
         } else {
             let mut expanded = localized.to_string();
             for (index, parameter) in self.parameters().iter().enumerate() {
-                expanded = expanded.replace(&format!("{{{index}}}"), parameter);
+                expanded = expanded.replace(format_smolstr!("{{{index}}}").as_str(), parameter);
             }
             expanded.into()
         };

@@ -1,3 +1,5 @@
+use smol_str::SmolStr;
+
 use crate::MediaType;
 
 #[derive(Clone)]
@@ -23,12 +25,12 @@ impl From<File> for web_sys::File {
 }
 
 impl File {
-    pub fn name(&self) -> String {
-        self.inner.name()
+    pub fn name(&self) -> SmolStr {
+        self.inner.name().into()
     }
 
     pub fn media_type(&self) -> MediaType {
-        self.inner.type_().into()
+        self.inner.type_().as_str().into()
     }
 }
 

@@ -7,6 +7,7 @@ use futures_signals::signal::{
 use futures_signals_ext::{MutableExt, MutableOption};
 use log::{debug, error, trace, warn};
 use serde::{de::DeserializeOwned, Serialize};
+use smol_str::SmolStr;
 
 #[cfg(feature = "json")]
 use crate::JSONSerialize;
@@ -437,7 +438,7 @@ where
             }
         }
 
-        fetch::<String, _, MV>(
+        fetch::<SmolStr, _, MV>(
             request.with_is_load(false),
             self.transfer_state.clone(),
             self.messages.clone(),

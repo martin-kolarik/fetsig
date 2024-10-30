@@ -1,6 +1,7 @@
 use core::fmt::Display;
 
 use serde::{Deserialize, Deserializer, Serialize};
+use smol_str::SmolStr;
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum MediaType {
     #[default]
@@ -89,8 +90,8 @@ impl From<&str> for MediaType {
     }
 }
 
-impl From<String> for MediaType {
-    fn from(mime: String) -> Self {
+impl From<SmolStr> for MediaType {
+    fn from(mime: SmolStr) -> Self {
         Self::from(mime.as_str())
     }
 }

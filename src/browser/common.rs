@@ -3,11 +3,12 @@ use std::time::Duration;
 use artwrap::TimeoutFutureExt;
 use base64::{engine::general_purpose, Engine};
 use js_sys::{JsString, Uint8Array};
+use smol_str::{format_smolstr, SmolStr, ToSmolStr};
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{AbortController, AbortSignal, Response, ResponseType};
 
-use crate::{uformat, MacVerify, MediaType, StatusCode, HEADER_SIGNATURE};
+use crate::{uformat_smolstr, MacVerify, MediaType, StatusCode, HEADER_SIGNATURE};
 
 #[cfg(feature = "json")]
 use crate::JSONDeserialize;
@@ -41,7 +42,7 @@ pub struct Abort {
 }
 
 impl Abort {
-    pub fn new() -> Result<Self, String> {
+    pub fn new() -> Result<Self, SmolStr> {
         Ok(Self {
             controller: AbortController::new().map_err(js_error)?,
         })
@@ -57,7 +58,7 @@ impl Abort {
 }
 
 pub(crate) struct PendingFetch {
-    url: String,
+    url: SmolStr,
     #[allow(dead_code)]
     abort: Abort,
     timeout: Option<Duration>,
@@ -66,13 +67,13 @@ pub(crate) struct PendingFetch {
 
 impl PendingFetch {
     pub fn new(
-        url: impl ToString,
+        url: impl ToSmolStr,
         abort: Abort,
         timeout: Option<Duration>,
         request_future: JsFuture,
     ) -> Self {
         Self {
-            url: url.to_string(),
+            url: url.to_smolstr(),
             abort,
             timeout,
             request_future,
@@ -93,8 +94,9 @@ impl PendingFetch {
                     DecodedResponse::new(response.status()).with_response(response)
                 }
             }
-            Ok(Err(error)) => DecodedResponse::new(StatusCode::FetchFailed)
-                .with_hint(uformat!("Fetch start failed ({})", js_error(error))),
+            Ok(Err(error)) => DecodedResponse::new(StatusCode::FetchFailed).with_hint(
+                uformat_smolstr!("Fetch start failed ({})", js_error(error).as_str()),
+            ),
             Err(_) => {
                 self.abort.abort();
                 DecodedResponse::new(StatusCode::FetchTimeout).with_hint(self.url)
@@ -105,7 +107,7 @@ impl PendingFetch {
 
 pub(crate) struct DecodedResponse<R> {
     status: StatusCode,
-    hint: Option<String>,
+    hint: Option<SmolStr>,
     response: Option<R>,
 }
 
@@ -123,8 +125,8 @@ impl<R> DecodedResponse<R> {
         self
     }
 
-    pub fn with_hint(mut self, hint: impl ToString) -> Self {
-        self.hint = Some(hint.to_string());
+    pub fn with_hint(mut self, hint: impl ToSmolStr) -> Self {
+        self.hint = Some(hint.to_smolstr());
         self
     }
 
@@ -188,9 +190,9 @@ where
 {
     let headers = response.headers();
     let content_type = headers.get("Content-Type").map_err(|error| {
-        DecodedResponse::new(StatusCode::FetchFailed).with_hint(uformat!(
+        DecodedResponse::new(StatusCode::FetchFailed).with_hint(uformat_smolstr!(
             "Cannot decode Content-Type header: {}.",
-            js_error(error)
+            js_error(error).as_str()
         ))
     })?;
     let media_type = match content_type {
@@ -199,10 +201,10 @@ where
     };
 
     let signature = headers.get(HEADER_SIGNATURE).map_err(|error| {
-        DecodedResponse::new(StatusCode::FetchFailed).with_hint(uformat!(
+        DecodedResponse::new(StatusCode::FetchFailed).with_hint(uformat_smolstr!(
             "Cannot decode {} header: {}.",
             HEADER_SIGNATURE,
-            js_error(error)
+            js_error(error).as_str()
         ))
     })?;
 
@@ -232,7 +234,7 @@ pub async fn decode_content<R, MV>(
     decode_base64: bool,
     content: JsValue,
     signature: Option<&str>,
-) -> Result<Option<R>, (StatusCode, String)>
+) -> Result<Option<R>, (StatusCode, SmolStr)>
 where
     R: FetchDeserializable,
     MV: MacVerify,
@@ -242,7 +244,7 @@ where
         MediaType::Json => (),
         #[cfg(feature = "postcard")]
         MediaType::Postcard => (),
-        _ => Err((StatusCode::UnsupportedMediaType, String::default()))?,
+        _ => Err((StatusCode::UnsupportedMediaType, SmolStr::default()))?,
     }
 
     let data = if content.is_string() {
@@ -267,7 +269,7 @@ where
     let data = if decode_base64 {
         general_purpose::STANDARD_NO_PAD
             .decode(data)
-            .map_err(|error| (StatusCode::DecodeFailed, error.to_string()))?
+            .map_err(|error| (StatusCode::DecodeFailed, format_smolstr!("{error}")))?
     } else {
         data
     };
@@ -280,7 +282,10 @@ where
         ))?,
         Err(error) => Err((
             StatusCode::DecodeFailed,
-            uformat!("Response signature verification failed: {}.", error),
+            SmolStr::from_iter([
+                "Response signature verification failed: {}.",
+                error.as_str(),
+            ]),
         ))?,
     }
 
@@ -299,7 +304,7 @@ where
     .map_err(|error| {
         (
             StatusCode::DecodeFailed,
-            uformat!("Deserialization failed: {}", error),
+            SmolStr::from_iter(["Deserialization failed: {}", error.as_str()]),
         )
     })
     .map(|response| Some(response))

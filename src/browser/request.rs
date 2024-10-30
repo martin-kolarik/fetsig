@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use js_sys::Uint8Array;
+use smol_str::{SmolStr, ToSmolStr};
 use wasm_bindgen::JsValue;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{Headers, RequestInit};
@@ -47,7 +48,7 @@ pub struct Request<'a> {
     method: Method,
     is_load: bool,
     url: &'a str,
-    headers: Option<Vec<(&'static str, String)>>,
+    headers: Option<Vec<(&'static str, SmolStr)>>,
     media_type: Option<MediaType>,
     body: Option<Body>,
     wants_response: bool,
@@ -87,15 +88,15 @@ impl<'a> Request<'a> {
     }
 
     #[must_use]
-    pub fn with_header(mut self, name: &'static str, value: impl ToString) -> Self {
+    pub fn with_header(mut self, name: &'static str, value: impl ToSmolStr) -> Self {
         let mut headers = self.headers.take().unwrap_or_default();
-        headers.push((name, value.to_string()));
+        headers.push((name, value.to_smolstr()));
         self.headers = Some(headers);
         self
     }
 
     #[must_use]
-    pub fn with_headers(mut self, headers: Option<Vec<(&'static str, String)>>) -> Self {
+    pub fn with_headers(mut self, headers: Option<Vec<(&'static str, SmolStr)>>) -> Self {
         self.headers = headers;
         self
     }
@@ -209,7 +210,7 @@ impl<'a> Request<'a> {
         self.media_type
     }
 
-    pub fn headers(&self) -> Option<&[(&'static str, String)]> {
+    pub fn headers(&self) -> Option<&[(&'static str, SmolStr)]> {
         self.headers.as_deref()
     }
 
@@ -217,7 +218,7 @@ impl<'a> Request<'a> {
         self.wants_response
     }
 
-    pub(crate) fn start(&self) -> Result<PendingFetch, String> {
+    pub(crate) fn start(&self) -> Result<PendingFetch, SmolStr> {
         let request_init = RequestInit::new();
         request_init.set_method(match &self.method {
             Method::Head => "HEAD",
@@ -258,7 +259,7 @@ impl<'a> Request<'a> {
 }
 
 impl<'a> TryFrom<&Request<'a>> for Headers {
-    type Error = String;
+    type Error = SmolStr;
 
     fn try_from(request: &Request) -> Result<Self, Self::Error> {
         let output = Headers::new().map_err(js_error)?;

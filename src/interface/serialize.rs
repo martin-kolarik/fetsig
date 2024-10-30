@@ -5,16 +5,17 @@ mod json {
     use std::io::Write;
 
     use serde::{de::DeserializeOwned, Serialize};
+    use smol_str::SmolStr;
 
-    use crate::uformat;
+    use crate::uformat_smolstr;
 
     pub trait JSONSerialize
     where
         Self: Serialize,
     {
-        fn write_json<W: Write>(&self, writer: &mut W) -> Result<(), String> {
+        fn write_json<W: Write>(&self, writer: &mut W) -> Result<(), SmolStr> {
             serde_json::to_writer(writer, self)
-                .map_err(|e| uformat!("Serialization (json) failed: {}", e.to_string()))
+                .map_err(|e| uformat_smolstr!("Serialization (json) failed: {}", e.to_string()))
         }
 
         fn to_json(&self) -> Vec<u8> {
@@ -30,9 +31,9 @@ mod json {
     where
         Self: DeserializeOwned,
     {
-        fn try_from_json(json: &[u8]) -> Result<Self, String> {
+        fn try_from_json(json: &[u8]) -> Result<Self, SmolStr> {
             serde_json::from_slice::<Self>(json)
-                .map_err(|e| uformat!("Deserialization (json) failed: {}", e.to_string()))
+                .map_err(|e| uformat_smolstr!("Deserialization (json) failed: {}", e.to_string()))
         }
     }
 
@@ -48,8 +49,9 @@ mod postcard {
 
     use postcard::{ser_flavors::Flavor, serialize_with_flavor};
     use serde::{de::DeserializeOwned, Serialize};
+    use smol_str::SmolStr;
 
-    use crate::uformat;
+    use crate::uformat_smolstr;
 
     struct PostcardWriteStorage<'a, W> {
         writer: &'a mut W,
@@ -81,10 +83,10 @@ mod postcard {
     where
         Self: Serialize,
     {
-        fn write_postcard<W: Write>(&self, writer: &mut W) -> Result<(), String> {
+        fn write_postcard<W: Write>(&self, writer: &mut W) -> Result<(), SmolStr> {
             let storage = PostcardWriteStorage { writer };
             serialize_with_flavor(self, storage)
-                .map_err(|e| uformat!("Serialization (postcard) failed: {}", e.to_string()))
+                .map_err(|e| uformat_smolstr!("Serialization (postcard) failed: {}", e.to_string()))
         }
 
         fn to_postcard(&self) -> Vec<u8> {
@@ -100,9 +102,10 @@ mod postcard {
     where
         Self: DeserializeOwned,
     {
-        fn try_from_postcard(postcard: &[u8]) -> Result<Self, String> {
-            postcard::from_bytes::<Self>(postcard)
-                .map_err(|e| uformat!("Deserialization (postcard) failed: {}", e.to_string()))
+        fn try_from_postcard(postcard: &[u8]) -> Result<Self, SmolStr> {
+            postcard::from_bytes::<Self>(postcard).map_err(|e| {
+                uformat_smolstr!("Deserialization (postcard) failed: {}", e.to_string())
+            })
         }
     }
 

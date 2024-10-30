@@ -2,6 +2,7 @@ use futures_signals::signal::{Mutable, Signal, SignalExt};
 use futures_signals_ext::{MutableExt, MutableOption};
 use log::debug;
 use serde::de::DeserializeOwned;
+use smol_str::SmolStr;
 
 use crate::{Messages, NoMac, StatusCode};
 
@@ -61,7 +62,7 @@ impl UploadStore {
     where
         C: FnOnce(StatusCode) + 'static,
     {
-        self.do_store::<String, _>(request, None, response_messages, result_callback)
+        self.do_store::<SmolStr, _>(request, None, response_messages, result_callback)
     }
 
     pub fn store_with_response<R, C>(
