@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use js_sys::Uint8Array;
+use log::warn;
 use smol_str::{SmolStr, ToSmolStr};
 use wasm_bindgen::JsValue;
 use wasm_bindgen_futures::JsFuture;
@@ -131,38 +132,71 @@ impl<'a> Request<'a> {
         self
     }
 
-    #[cfg(feature = "json")]
     #[must_use]
-    pub fn json(mut self) -> Self {
+    pub fn encoding(mut self, media_type: MediaType) -> Self {
+        let media_type = match media_type {
+            #[cfg(feature = "json")]
+            MediaType::Json => MediaType::Json,
+            #[cfg(feature = "postcard")]
+            MediaType::Postcard => MediaType::Postcard,
+            _ => {
+                warn!(
+                    "Unsupported media type '{media_type}' used, degrading to 'application/json'",
+                );
+                MediaType::Json
+            }
+        };
         self.wants_response = false;
-        self.with_media_type(MediaType::Json)
-            .with_header(HEADER_ACCEPT, MediaType::Json)
+        self.with_media_type(media_type)
+            .with_header(HEADER_ACCEPT, media_type)
     }
 
-    #[cfg(feature = "json")]
     #[must_use]
-    pub fn json_with_response(mut self) -> Self {
+    pub fn encoding_with_response(mut self, media_type: MediaType) -> Self {
+        let media_type = match media_type {
+            #[cfg(feature = "json")]
+            MediaType::Json => MediaType::Json,
+            #[cfg(feature = "postcard")]
+            MediaType::Postcard => MediaType::Postcard,
+            _ => {
+                warn!(
+                    "Unsupported media type '{media_type}' used, degrading to 'application/json'",
+                );
+                MediaType::Json
+            }
+        };
         self.wants_response = true;
-        self.with_media_type(MediaType::Json)
-            .with_header(HEADER_ACCEPT, MediaType::Json.to_string())
+        self.with_media_type(media_type)
+            .with_header(HEADER_ACCEPT, media_type)
             .with_header(HEADER_WANTS_RESPONSE, "1")
     }
 
-    #[cfg(feature = "postcard")]
+    #[cfg(feature = "json")]
+    #[inline]
     #[must_use]
-    pub fn postcard(mut self) -> Self {
-        self.wants_response = false;
-        self.with_media_type(MediaType::Postcard)
-            .with_header(HEADER_ACCEPT, MediaType::Postcard.to_string())
+    pub fn json(self) -> Self {
+        self.encoding(MediaType::Json)
+    }
+
+    #[cfg(feature = "json")]
+    #[inline]
+    #[must_use]
+    pub fn json_with_response(self) -> Self {
+        self.encoding_with_response(MediaType::Json)
     }
 
     #[cfg(feature = "postcard")]
+    #[inline]
     #[must_use]
-    pub fn postcard_with_response(mut self) -> Self {
-        self.wants_response = true;
-        self.with_media_type(MediaType::Postcard)
-            .with_header(HEADER_ACCEPT, MediaType::Postcard.to_string())
-            .with_header(HEADER_WANTS_RESPONSE, "1")
+    pub fn postcard(self) -> Self {
+        self.encoding(MediaType::Postcard)
+    }
+
+    #[cfg(feature = "postcard")]
+    #[inline]
+    #[must_use]
+    pub fn postcard_with_response(self) -> Self {
+        self.encoding_with_response(MediaType::Postcard)
     }
 
     #[must_use]

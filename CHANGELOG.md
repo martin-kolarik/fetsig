@@ -12,6 +12,8 @@ format is based on [Keep a Changelog], and this project aims to follow
 
 - `uformat` replaced with `uformat_smolstr`
 
+- `Request` interface extended with `encoding` and `encoding_with_response`
+
 - bump up dependencies versions
 
 ## [0.4.2] - 2024-10-07

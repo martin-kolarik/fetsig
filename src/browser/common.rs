@@ -291,9 +291,9 @@ where
 
     match media_type {
         #[cfg(feature = "json")]
-        MediaType::Json => R::try_from_json(&data).map_err(|e| e.to_string()),
+        MediaType::Json => R::try_from_json(&data),
         #[cfg(feature = "postcard")]
-        MediaType::Postcard => R::try_from_postcard(&data).map_err(|e| e.to_string()),
+        MediaType::Postcard => R::try_from_postcard(&data),
         _ => {
             return Err((
                 StatusCode::UnsupportedMediaType,
