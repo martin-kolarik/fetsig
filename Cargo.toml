@@ -1,6 +1,6 @@
 [package]
 name = "fetsig"
-version = "0.5.0"
+version = "0.5.2"
 authors = ["martin.kolarik@smartcontrol.cz"]
 description = "Web-sys based browser fetch library using futures-signals with optional MAC."
 edition = "2021"
@@ -13,13 +13,12 @@ default = ["browser", "json", "postcard"]
 browser = [
     "dep:base64",
     "dep:js-sys",
-    "dep:ufmt",
     "dep:wasm-bindgen",
     "dep:wasm-bindgen-futures",
     "dep:web-sys",
 ]
-json = ["dep:serde_json", "dep:serde_with", "dep:ufmt"]
-postcard = ["dep:postcard", "dep:ufmt"]
+json = ["dep:serde_json", "dep:serde_with"]
+postcard = ["dep:postcard"]
 
 [dependencies]
 artwrap = { version = "^0.1" }
@@ -46,9 +45,7 @@ serde_with = { version = "^3.6", default-features = false, features = [
     "macros",
 ], optional = true }
 smol_str = { version = "^0.3", features = ["serde"] }
-ufmt = { version = "^0.2", default-features = false, features = [
-    "std",
-], optional = true }
+ufmt = { version = "^0.2", default-features = false, features = ["std"] }
 wasm-bindgen = { version = "^0.2", default-features = false, optional = true }
 wasm-bindgen-futures = { version = "^0.4", optional = true }
 web-sys = { version = "^0.3", features = [

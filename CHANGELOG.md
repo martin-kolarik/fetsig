@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file. The
 format is based on [Keep a Changelog], and this project aims to follow
 [Semantic Versioning].
 
+## [0.5.1], [0.5.2] - 2024-10-30
+
+### Fixed
+
+- change type of `ufmt` dependency
+
 ## [0.5.0] - 2024-10-30
 
 ### Changed
