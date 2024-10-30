@@ -16,15 +16,15 @@ macro_rules! uformat_smolstr {
     ($($arg:tt)*) => {{
         use ufmt;
         use smol_str::SmolStrBuilder;
-        let mut builder = crate::Builder(SmolStrBuilder::new());
+        let mut builder = $crate::Ufmtf(SmolStrBuilder::new());
         ufmt::uwrite!(&mut builder, $($arg)*).unwrap();
         builder.0.finish()
     }}
 }
 
-struct Builder(SmolStrBuilder);
+pub struct Ufmtf(pub SmolStrBuilder);
 
-impl uWrite for Builder {
+impl uWrite for Ufmtf {
     type Error = ();
 
     fn write_str(&mut self, s: &str) -> Result<(), ()> {
