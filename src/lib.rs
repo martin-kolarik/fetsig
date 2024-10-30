@@ -14,12 +14,19 @@ use ufmt::uWrite;
 #[macro_export]
 macro_rules! uformat_smolstr {
     ($($arg:tt)*) => {{
-        use ufmt;
-        use smol_str::SmolStrBuilder;
-        let mut builder = $crate::Ufmtf(SmolStrBuilder::new());
+        use {ufmt, smol_str};
+        let mut builder = $crate::Ufmtf(smol_str::SmolStrBuilder::new());
         ufmt::uwrite!(&mut builder, $($arg)*).unwrap();
         builder.0.finish()
     }}
+}
+
+#[macro_export]
+macro_rules! uformat_smolstr_ref {
+    ($($arg:tt)*) => {
+        let s = $crate::uformat_smolstr!($($arg)*);
+        s.as_str()
+    }
 }
 
 pub struct Ufmtf(pub SmolStrBuilder);
