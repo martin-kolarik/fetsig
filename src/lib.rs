@@ -21,14 +21,6 @@ macro_rules! uformat_smolstr {
     }}
 }
 
-#[macro_export]
-macro_rules! uformat_smolstr_ref {
-    ($($arg:tt)*) => {
-        let s = $crate::uformat_smolstr!($($arg)*);
-        s.as_str()
-    }
-}
-
 pub struct Ufmtf(pub SmolStrBuilder);
 
 impl uWrite for Ufmtf {

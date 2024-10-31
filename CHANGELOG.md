@@ -4,11 +4,11 @@ All notable changes to this project will be documented in this file. The
 format is based on [Keep a Changelog], and this project aims to follow
 [Semantic Versioning].
 
-## [0.6.0], [0.6.1] - 2024-10-31
+## [0.7.0] - 2024-10-31
 
 ### New
 
-- `uformat_smolstr_ref` added
+- clean up major version after previous attempts
 
 ## [0.5.1], [0.5.2], [0.5.3], [0.5.4], [0.5.5], [0.5.6] - 2024-10-30
 
