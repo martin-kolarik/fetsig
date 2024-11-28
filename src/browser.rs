@@ -1,5 +1,5 @@
 use js_sys::Error;
-use smol_str::{format_smolstr, SmolStr};
+use smol_str::{SmolStr, format_smolstr};
 use wasm_bindgen::JsValue;
 
 mod collection;
@@ -9,7 +9,7 @@ mod collectionstate;
 pub use collectionstate::*;
 
 mod common;
-pub use common::{decode_content, none, FetchDeserializable};
+pub use common::{FetchDeserializable, decode_content, none};
 
 mod entity;
 pub use self::entity::*;

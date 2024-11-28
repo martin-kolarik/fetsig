@@ -76,7 +76,7 @@ impl<'a> FileListIterator<'a> {
     }
 }
 
-impl<'a> Iterator for FileListIterator<'a> {
+impl Iterator for FileListIterator<'_> {
     type Item = File;
 
     fn next(&mut self) -> Option<Self::Item> {

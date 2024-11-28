@@ -1,14 +1,14 @@
 use std::time::Duration;
 
 use artwrap::TimeoutFutureExt;
-use base64::{engine::general_purpose, Engine};
+use base64::{Engine, engine::general_purpose};
 use js_sys::{JsString, Uint8Array};
-use smol_str::{format_smolstr, SmolStr, ToSmolStr};
+use smol_str::{SmolStr, ToSmolStr, format_smolstr};
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{AbortController, AbortSignal, Response, ResponseType};
 
-use crate::{uformat_smolstr, MacVerify, MediaType, StatusCode, HEADER_SIGNATURE};
+use crate::{HEADER_SIGNATURE, MacVerify, MediaType, StatusCode, uformat_smolstr};
 
 #[cfg(feature = "json")]
 use crate::JSONDeserialize;

@@ -4,7 +4,7 @@ pub use json::*;
 mod json {
     use std::io::Write;
 
-    use serde::{de::DeserializeOwned, Serialize};
+    use serde::{Serialize, de::DeserializeOwned};
     use smol_str::SmolStr;
 
     use crate::uformat_smolstr;
@@ -48,7 +48,7 @@ mod postcard {
     use std::io::Write;
 
     use postcard::{ser_flavors::Flavor, serialize_with_flavor};
-    use serde::{de::DeserializeOwned, Serialize};
+    use serde::{Serialize, de::DeserializeOwned};
     use smol_str::SmolStr;
 
     use crate::uformat_smolstr;
@@ -57,7 +57,7 @@ mod postcard {
         writer: &'a mut W,
     }
 
-    impl<'a, W> Flavor for PostcardWriteStorage<'a, W>
+    impl<W> Flavor for PostcardWriteStorage<'_, W>
     where
         W: Write,
     {
@@ -72,7 +72,7 @@ mod postcard {
         }
 
         fn try_extend(&mut self, data: &[u8]) -> postcard::Result<()> {
-            match self.writer.write(data) {
+            match self.writer.write_all(data) {
                 Ok(_) => Ok(()),
                 Err(_) => Err(postcard::Error::SerializeBufferFull),
             }

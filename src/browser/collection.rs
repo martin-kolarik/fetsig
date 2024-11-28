@@ -10,7 +10,7 @@ use futures_signals::{
 };
 use futures_signals_ext::{MutableExt, MutableVecExt};
 use log::{debug, error, trace, warn};
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 
 #[cfg(feature = "json")]
 use crate::JSONSerialize;
@@ -19,14 +19,14 @@ use crate::MediaType;
 #[cfg(feature = "postcard")]
 use crate::PostcardSerialize;
 use crate::{
-    CollectionResponse, MacSign, MacVerify, Messages, NoMac, Paging, StatusCode, HEADER_SIGNATURE,
+    CollectionResponse, HEADER_SIGNATURE, MacSign, MacVerify, Messages, NoMac, Paging, StatusCode,
 };
 
 use super::{
-    common::{execute_fetch, PendingFetch},
+    CollectionState,
+    common::{PendingFetch, execute_fetch},
     request::Request,
     transferstate::TransferState,
-    CollectionState,
 };
 
 #[derive(Debug)]
@@ -80,7 +80,7 @@ impl<E, MV> CollectionStore<E, MV> {
         self.transfer_state.map(TransferState::loaded)
     }
 
-    pub fn loaded_signal(&self) -> impl Signal<Item = bool> {
+    pub fn loaded_signal(&self) -> impl Signal<Item = bool> + use<E, MV> {
         self.transfer_state
             .signal_ref(TransferState::loaded)
             .dedupe()
@@ -90,7 +90,7 @@ impl<E, MV> CollectionStore<E, MV> {
         self.transfer_state.map(TransferState::loaded_status)
     }
 
-    pub fn loaded_status_signal(&self) -> impl Signal<Item = Option<StatusCode>> {
+    pub fn loaded_status_signal(&self) -> impl Signal<Item = Option<StatusCode>> + use<E, MV> {
         self.transfer_state
             .signal_ref(TransferState::loaded_status)
             .dedupe()
@@ -100,7 +100,7 @@ impl<E, MV> CollectionStore<E, MV> {
         self.transfer_state.map(TransferState::stored)
     }
 
-    pub fn stored_signal(&self) -> impl Signal<Item = bool> {
+    pub fn stored_signal(&self) -> impl Signal<Item = bool> + use<E, MV> {
         self.transfer_state
             .signal_ref(TransferState::stored)
             .dedupe()
@@ -110,7 +110,7 @@ impl<E, MV> CollectionStore<E, MV> {
         self.transfer_state.map(TransferState::stored_status)
     }
 
-    pub fn stored_status_signal(&self) -> impl Signal<Item = Option<StatusCode>> {
+    pub fn stored_status_signal(&self) -> impl Signal<Item = Option<StatusCode>> + use<E, MV> {
         self.transfer_state
             .signal_ref(TransferState::stored_status)
             .dedupe()
@@ -120,7 +120,7 @@ impl<E, MV> CollectionStore<E, MV> {
         self.transfer_state.map(TransferState::pending)
     }
 
-    pub fn pending_signal(&self) -> impl Signal<Item = bool> {
+    pub fn pending_signal(&self) -> impl Signal<Item = bool> + use<E, MV> {
         self.transfer_state
             .signal_ref(TransferState::pending)
             .dedupe()
@@ -204,11 +204,11 @@ impl<E, MV> CollectionStore<E, MV>
 where
     E: Copy,
 {
-    pub fn empty_signal(&self) -> impl Signal<Item = bool> {
+    pub fn empty_signal(&self) -> impl Signal<Item = bool> + use<E, MV> {
         self.collection.signal_vec().is_empty().dedupe()
     }
 
-    pub fn collection_state_signal(&self) -> impl Signal<Item = CollectionState> {
+    pub fn collection_state_signal(&self) -> impl Signal<Item = CollectionState> + use<E, MV> {
         collection_state_signal(self.pending_signal(), self.empty_signal())
     }
 
@@ -255,7 +255,7 @@ where
         self.collection.find_remove(predicate)
     }
 
-    pub fn signal_map<F, U>(&self, f: F) -> impl Signal<Item = U>
+    pub fn signal_map<F, U>(&self, f: F) -> impl Signal<Item = U> + use<E, MV, F, U>
     where
         F: FnMut(&[E]) -> U,
     {
@@ -266,14 +266,17 @@ where
         self.collection.signal_vec()
     }
 
-    pub fn signal_vec_filter<F>(&self, f: F) -> impl SignalVec<Item = E>
+    pub fn signal_vec_filter<F>(&self, f: F) -> impl SignalVec<Item = E> + use<E, MV, F>
     where
         F: FnMut(&E) -> bool,
     {
         self.collection.signal_vec_filter(f)
     }
 
-    pub fn signal_vec_filter_signal<F, U>(&self, f: F) -> impl SignalVec<Item = E>
+    pub fn signal_vec_filter_signal<F, U>(
+        &self,
+        f: F,
+    ) -> impl SignalVec<Item = E> + use<E, MV, F, U>
     where
         F: FnMut(&E) -> U,
         U: Signal<Item = bool>,
@@ -281,14 +284,17 @@ where
         self.collection.signal_vec_filter_signal(f)
     }
 
-    pub fn signal_vec_map<F, U>(&self, f: F) -> impl SignalVec<Item = U>
+    pub fn signal_vec_map<F, U>(&self, f: F) -> impl SignalVec<Item = U> + use<E, MV, F, U>
     where
         F: FnMut(E) -> U,
     {
         self.collection.signal_vec().map(f)
     }
 
-    pub fn signal_vec_map_signal<F, U>(&self, f: F) -> impl SignalVec<Item = U::Item>
+    pub fn signal_vec_map_signal<F, U>(
+        &self,
+        f: F,
+    ) -> impl SignalVec<Item = U::Item> + use<E, MV, F, U>
     where
         F: FnMut(E) -> U,
         U: Signal,
@@ -296,7 +302,7 @@ where
         self.collection.signal_vec().map_signal(f)
     }
 
-    pub fn signal_vec_filter_map<F, U>(&self, f: F) -> impl SignalVec<Item = U>
+    pub fn signal_vec_filter_map<F, U>(&self, f: F) -> impl SignalVec<Item = U> + use<E, MV, F, U>
     where
         F: FnMut(E) -> Option<U>,
     {
@@ -308,11 +314,13 @@ impl<E, MV> CollectionStore<E, MV>
 where
     E: Clone,
 {
-    pub fn empty_signal_cloned(&self) -> impl Signal<Item = bool> {
+    pub fn empty_signal_cloned(&self) -> impl Signal<Item = bool> + use<E, MV> {
         self.collection.signal_vec_cloned().is_empty().dedupe()
     }
 
-    pub fn collection_state_signal_cloned(&self) -> impl Signal<Item = CollectionState> {
+    pub fn collection_state_signal_cloned(
+        &self,
+    ) -> impl Signal<Item = CollectionState> + use<E, MV> {
         collection_state_signal(self.pending_signal(), self.empty_signal_cloned())
     }
 
@@ -363,7 +371,7 @@ where
         self.collection.find_remove_cloned(predicate)
     }
 
-    pub fn signal_map_cloned<F, U>(&self, f: F) -> impl Signal<Item = U>
+    pub fn signal_map_cloned<F, U>(&self, f: F) -> impl Signal<Item = U> + use<E, MV, F, U>
     where
         F: FnMut(&[E]) -> U,
     {
@@ -374,14 +382,17 @@ where
         self.collection.signal_vec_cloned()
     }
 
-    pub fn signal_vec_filter_cloned<F>(&self, f: F) -> impl SignalVec<Item = E>
+    pub fn signal_vec_filter_cloned<F>(&self, f: F) -> impl SignalVec<Item = E> + use<E, MV, F>
     where
         F: FnMut(&E) -> bool,
     {
         self.collection.signal_vec_filter_cloned(f)
     }
 
-    pub fn signal_vec_filter_signal_cloned<F, U>(&self, f: F) -> impl SignalVec<Item = E>
+    pub fn signal_vec_filter_signal_cloned<F, U>(
+        &self,
+        f: F,
+    ) -> impl SignalVec<Item = E> + use<E, MV, F, U>
     where
         F: FnMut(&E) -> U,
         U: Signal<Item = bool>,
@@ -389,14 +400,17 @@ where
         self.collection.signal_vec_filter_signal_cloned(f)
     }
 
-    pub fn signal_vec_map_cloned<F, U>(&self, f: F) -> impl SignalVec<Item = U>
+    pub fn signal_vec_map_cloned<F, U>(&self, f: F) -> impl SignalVec<Item = U> + use<E, MV, F, U>
     where
         F: FnMut(E) -> U,
     {
         self.collection.signal_vec_cloned().map(f)
     }
 
-    pub fn signal_vec_map_signal_cloned<F, U>(&self, f: F) -> impl SignalVec<Item = U::Item>
+    pub fn signal_vec_map_signal_cloned<F, U>(
+        &self,
+        f: F,
+    ) -> impl SignalVec<Item = U::Item> + use<E, MV, F, U>
     where
         F: FnMut(E) -> U,
         U: Signal,
@@ -404,7 +418,10 @@ where
         self.collection.signal_vec_cloned().map_signal(f)
     }
 
-    pub fn signal_vec_filter_map_cloned<F, U>(&self, f: F) -> impl SignalVec<Item = U>
+    pub fn signal_vec_filter_map_cloned<F, U>(
+        &self,
+        f: F,
+    ) -> impl SignalVec<Item = U> + use<E, MV, F, U>
     where
         F: FnMut(E) -> Option<U>,
     {

@@ -78,7 +78,7 @@ where
 pub fn collection_state_from_vec<T, S>(
     vec: &MutableVec<T>,
     pending: S,
-) -> impl Signal<Item = CollectionState>
+) -> impl Signal<Item = CollectionState> + use<T, S>
 where
     T: Clone,
     S: Signal<Item = bool>,

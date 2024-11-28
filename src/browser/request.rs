@@ -7,7 +7,7 @@ use wasm_bindgen::JsValue;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{Headers, RequestInit};
 
-use crate::{MediaType, HEADER_WANTS_RESPONSE};
+use crate::{HEADER_WANTS_RESPONSE, MediaType};
 
 use super::{
     common::{Abort, PendingFetch},
@@ -292,7 +292,7 @@ impl<'a> Request<'a> {
     }
 }
 
-impl<'a> TryFrom<&Request<'a>> for Headers {
+impl TryFrom<&Request<'_>> for Headers {
     type Error = SmolStr;
 
     fn try_from(request: &Request) -> Result<Self, Self::Error> {

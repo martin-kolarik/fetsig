@@ -36,7 +36,7 @@ impl UploadStore {
         self.transfer_state.map(TransferState::stored)
     }
 
-    pub fn stored_signal(&self) -> impl Signal<Item = bool> {
+    pub fn stored_signal(&self) -> impl Signal<Item = bool> + use<> {
         self.transfer_state.signal_ref(|state| state.stored())
     }
 
@@ -44,7 +44,7 @@ impl UploadStore {
         self.transfer_state.map(TransferState::stored_status)
     }
 
-    pub fn stored_status_signal(&self) -> impl Signal<Item = Option<StatusCode>> {
+    pub fn stored_status_signal(&self) -> impl Signal<Item = Option<StatusCode>> + use<> {
         self.transfer_state
             .signal_ref(TransferState::stored_status)
             .dedupe()
@@ -54,7 +54,7 @@ impl UploadStore {
         self.transfer_state.map(TransferState::pending)
     }
 
-    pub fn pending_signal(&self) -> impl Signal<Item = bool> {
+    pub fn pending_signal(&self) -> impl Signal<Item = bool> + use<> {
         self.transfer_state.signal_ref(|state| state.pending())
     }
 

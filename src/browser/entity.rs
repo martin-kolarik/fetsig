@@ -2,11 +2,11 @@ use std::marker::PhantomData;
 
 use artwrap::spawn_local;
 use futures_signals::signal::{
-    and, not, Mutable, MutableLockMut, MutableLockRef, Signal, SignalExt,
+    Mutable, MutableLockMut, MutableLockRef, Signal, SignalExt, and, not,
 };
 use futures_signals_ext::{MutableExt, MutableOption};
 use log::{debug, error, trace, warn};
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 use smol_str::SmolStr;
 
 #[cfg(feature = "json")]
@@ -16,11 +16,11 @@ use crate::MediaType;
 #[cfg(feature = "postcard")]
 use crate::PostcardSerialize;
 use crate::{
-    Dirty, EntityResponse, Inner, MacSign, MacVerify, Messages, NoMac, StatusCode, HEADER_SIGNATURE,
+    Dirty, EntityResponse, HEADER_SIGNATURE, Inner, MacSign, MacVerify, Messages, NoMac, StatusCode,
 };
 
 use super::{
-    common::{execute_fetch, PendingFetch},
+    common::{PendingFetch, execute_fetch},
     request::Request,
     transferstate::TransferState,
 };
@@ -77,11 +77,11 @@ impl<E, MV> EntityStore<E, MV> {
         self.entity.lock_ref().is_some()
     }
 
-    pub fn empty_signal(&self) -> impl Signal<Item = bool> {
+    pub fn empty_signal(&self) -> impl Signal<Item = bool> + use<E, MV> {
         self.entity.signal_ref(Option::is_none).dedupe()
     }
 
-    pub fn not_empty_signal(&self) -> impl Signal<Item = bool> {
+    pub fn not_empty_signal(&self) -> impl Signal<Item = bool> + use<E, MV> {
         self.entity.signal_ref(Option::is_some).dedupe()
     }
 
@@ -105,7 +105,7 @@ impl<E, MV> EntityStore<E, MV> {
         self.transfer_state.map(TransferState::loaded)
     }
 
-    pub fn loaded_signal(&self) -> impl Signal<Item = bool> {
+    pub fn loaded_signal(&self) -> impl Signal<Item = bool> + use<E, MV> {
         self.transfer_state
             .signal_ref(TransferState::loaded)
             .dedupe()
@@ -115,7 +115,7 @@ impl<E, MV> EntityStore<E, MV> {
         self.transfer_state.map(TransferState::loaded_status)
     }
 
-    pub fn loaded_status_signal(&self) -> impl Signal<Item = Option<StatusCode>> {
+    pub fn loaded_status_signal(&self) -> impl Signal<Item = Option<StatusCode>> + use<E, MV> {
         self.transfer_state
             .signal_ref(TransferState::loaded_status)
             .dedupe()
@@ -125,7 +125,7 @@ impl<E, MV> EntityStore<E, MV> {
         self.transfer_state.map(TransferState::stored)
     }
 
-    pub fn stored_signal(&self) -> impl Signal<Item = bool> {
+    pub fn stored_signal(&self) -> impl Signal<Item = bool> + use<E, MV> {
         self.transfer_state
             .signal_ref(TransferState::stored)
             .dedupe()
@@ -135,7 +135,7 @@ impl<E, MV> EntityStore<E, MV> {
         self.transfer_state.map(TransferState::stored_status)
     }
 
-    pub fn stored_status_signal(&self) -> impl Signal<Item = Option<StatusCode>> {
+    pub fn stored_status_signal(&self) -> impl Signal<Item = Option<StatusCode>> + use<E, MV> {
         self.transfer_state
             .signal_ref(TransferState::stored_status)
             .dedupe()
@@ -145,7 +145,7 @@ impl<E, MV> EntityStore<E, MV> {
         self.transfer_state.map(TransferState::pending)
     }
 
-    pub fn pending_signal(&self) -> impl Signal<Item = bool> {
+    pub fn pending_signal(&self) -> impl Signal<Item = bool> + use<E, MV> {
         self.transfer_state
             .signal_ref(TransferState::pending)
             .dedupe()
@@ -159,7 +159,7 @@ impl<E, MV> EntityStore<E, MV> {
         &self.messages
     }
 
-    pub fn dirty_signal(&self) -> impl Signal<Item = bool>
+    pub fn dirty_signal(&self) -> impl Signal<Item = bool> + use<E, MV>
     where
         E: Dirty,
     {
@@ -168,11 +168,11 @@ impl<E, MV> EntityStore<E, MV> {
             .dedupe()
     }
 
-    pub fn messages_error_signal(&self) -> impl Signal<Item = bool> {
+    pub fn messages_error_signal(&self) -> impl Signal<Item = bool> + use<E, MV> {
         self.messages.error_signal()
     }
 
-    pub fn can_commit_signal(&self) -> impl Signal<Item = bool>
+    pub fn can_commit_signal(&self) -> impl Signal<Item = bool> + use<E, MV>
     where
         E: Dirty,
     {
@@ -180,7 +180,7 @@ impl<E, MV> EntityStore<E, MV> {
     }
 
     #[inline]
-    pub fn signal_map<F, U>(&self, f: F) -> impl Signal<Item = Option<U>>
+    pub fn signal_map<F, U>(&self, f: F) -> impl Signal<Item = Option<U>> + use<E, MV, F, U>
     where
         F: FnMut(Option<&E>) -> Option<U>,
     {
@@ -188,7 +188,7 @@ impl<E, MV> EntityStore<E, MV> {
     }
 
     #[inline]
-    pub fn signal_map_some<F, U>(&self, f: F) -> impl Signal<Item = Option<U>>
+    pub fn signal_map_some<F, U>(&self, f: F) -> impl Signal<Item = Option<U>> + use<E, MV, F, U>
     where
         F: FnMut(&E) -> U,
     {
@@ -196,7 +196,11 @@ impl<E, MV> EntityStore<E, MV> {
     }
 
     #[inline]
-    pub fn signal_map_some_or<F, U>(&self, f: F, default: U) -> impl Signal<Item = U>
+    pub fn signal_map_some_or<F, U>(
+        &self,
+        f: F,
+        default: U,
+    ) -> impl Signal<Item = U> + use<E, MV, F, U>
     where
         F: FnMut(&E) -> U,
         U: Clone,
@@ -205,7 +209,11 @@ impl<E, MV> EntityStore<E, MV> {
     }
 
     #[inline]
-    pub fn signal_map_some_or_else<F, D, U>(&self, f: F, default: D) -> impl Signal<Item = U>
+    pub fn signal_map_some_or_else<F, D, U>(
+        &self,
+        f: F,
+        default: D,
+    ) -> impl Signal<Item = U> + use<E, MV, F, D, U>
     where
         F: FnMut(&E) -> U,
         D: FnOnce() -> U + Clone,
@@ -214,7 +222,10 @@ impl<E, MV> EntityStore<E, MV> {
     }
 
     #[inline]
-    pub fn signal_and_then_some<F, U>(&self, f: F) -> impl Signal<Item = Option<U>>
+    pub fn signal_and_then_some<F, U>(
+        &self,
+        f: F,
+    ) -> impl Signal<Item = Option<U>> + use<E, MV, F, U>
     where
         F: FnMut(&E) -> Option<U>,
     {
@@ -222,7 +233,11 @@ impl<E, MV> EntityStore<E, MV> {
     }
 
     #[inline]
-    pub fn signal_and_then_some_or<F, U>(&self, f: F, default: U) -> impl Signal<Item = U>
+    pub fn signal_and_then_some_or<F, U>(
+        &self,
+        f: F,
+        default: U,
+    ) -> impl Signal<Item = U> + use<E, MV, F, U>
     where
         F: FnMut(&E) -> Option<U>,
         U: Clone,
@@ -231,7 +246,11 @@ impl<E, MV> EntityStore<E, MV> {
     }
 
     #[inline]
-    pub fn signal_and_then_some_or_else<F, D, U>(&self, f: F, default: D) -> impl Signal<Item = U>
+    pub fn signal_and_then_some_or_else<F, D, U>(
+        &self,
+        f: F,
+        default: D,
+    ) -> impl Signal<Item = U> + use<E, MV, F, D, U>
     where
         F: FnMut(&E) -> Option<U>,
         D: FnOnce() -> U + Clone,
@@ -240,7 +259,7 @@ impl<E, MV> EntityStore<E, MV> {
     }
 
     #[inline]
-    pub fn signal_map_some_default<F, U>(&self, f: F) -> impl Signal<Item = U>
+    pub fn signal_map_some_default<F, U>(&self, f: F) -> impl Signal<Item = U> + use<E, MV, F, U>
     where
         F: FnMut(&E) -> U,
         U: Default,

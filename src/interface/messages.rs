@@ -11,7 +11,7 @@ use futures_signals::{
 };
 use futures_signals_ext::{MutableExt, MutableVecExt, SignalExtMapOption};
 use serde::{Deserialize, Serialize};
-use smol_str::{format_smolstr, SmolStr, ToSmolStr};
+use smol_str::{SmolStr, ToSmolStr, format_smolstr};
 
 #[derive(Default, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 pub enum MessageType {
@@ -199,7 +199,7 @@ impl Messages {
         self.error.set_neq(error);
     }
 
-    pub fn error_signal(&self) -> impl Signal<Item = bool> {
+    pub fn error_signal(&self) -> impl Signal<Item = bool> + use<> {
         self.error.signal().dedupe()
     }
 
@@ -254,24 +254,27 @@ impl Messages {
         self.evaluate_error();
     }
 
-    pub fn anything_for_key_signal(&self, key: impl ToSmolStr) -> impl Signal<Item = bool> {
+    pub fn anything_for_key_signal<S: ToSmolStr>(
+        &self,
+        key: S,
+    ) -> impl Signal<Item = bool> + use<S> {
         self.messages
             .signal_map_cloned()
             .key_cloned(key.to_smolstr())
             .map_some_default(|messages| !messages.lock_ref().is_empty())
     }
 
-    pub fn error_for_key_signal(&self, key: impl ToSmolStr) -> impl Signal<Item = bool> {
+    pub fn error_for_key_signal<S: ToSmolStr>(&self, key: S) -> impl Signal<Item = bool> + use<S> {
         self.messages
             .signal_map_cloned()
             .key_cloned(key.to_smolstr())
             .map_some_default(|messages| messages.lock_ref().iter().any(Message::error))
     }
 
-    pub fn messages_for_key_signal_vec(
+    pub fn messages_for_key_signal_vec<S: ToSmolStr>(
         &self,
-        key: impl ToSmolStr,
-    ) -> impl SignalVec<Item = Message> {
+        key: S,
+    ) -> impl SignalVec<Item = Message> + use<S> {
         self.messages
             .signal_map_cloned()
             .key_cloned(key.to_smolstr())
