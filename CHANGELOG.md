@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file. The
 format is based on [Keep a Changelog], and this project aims to follow
 [Semantic Versioning].
 
+## [0.8.1] - 2024-12-16
+
+- ZIP mime types added
+
+### New
+
+- Rust 2024 experimentally selected
+
+## [0.8.0] - 2024-11-28
+
+### New
+
+- Rust 2024 experimentally selected
+
 ## [0.7.0] - 2024-10-31
 
 ### New

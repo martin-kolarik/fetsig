@@ -26,6 +26,8 @@ pub enum MediaType {
     Wasm,
     Xml,
     Xlsx,
+    Zip,
+    Zip7,
 }
 
 const BYTE_STREAM: &str = "application/octet-stream";
@@ -49,6 +51,9 @@ const URF: &str = "image/urf";
 const WASM: &str = "application/wasm";
 const XLSX: &str = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 const XML: &str = "application/xml";
+const ZIP: &str = "application/zip";
+const ZIP_WIN: &str = "application/x-zip-compressed";
+const ZIP_7: &str = "application/x-7z-compressed";
 
 impl MediaType {
     pub fn as_str(&self) -> &str {
@@ -85,6 +90,9 @@ impl From<&str> for MediaType {
             WASM => Self::Wasm,
             XML => Self::Xml,
             XLSX => Self::Xlsx,
+            ZIP => Self::Zip,
+            ZIP_WIN => Self::Zip,
+            ZIP_7 => Self::Zip7,
             _ => Self::default(),
         }
     }
@@ -120,6 +128,8 @@ impl AsRef<str> for MediaType {
             MediaType::Wasm => WASM,
             MediaType::Xml => XML,
             MediaType::Xlsx => XLSX,
+            MediaType::Zip => ZIP,
+            MediaType::Zip7 => ZIP_7,
         }
     }
 }
