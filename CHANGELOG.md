@@ -4,15 +4,15 @@ All notable changes to this project will be documented in this file. The
 format is based on [Keep a Changelog], and this project aims to follow
 [Semantic Versioning].
 
+## [0.9.0] - 2025-02-10
+
+### Changed
+
+- bump up `futures_signals_ext` version
+
 ## [0.8.1] - 2024-12-16
 
 - ZIP mime types added
-
-### New
-
-- Rust 2024 experimentally selected
-
-## [0.8.0] - 2024-11-28
 
 ### New
 
