@@ -255,6 +255,12 @@ where
         self.collection.find_remove(predicate)
     }
 
+    pub fn set_externally_loaded(&self, values: Vec<E>) {
+        self.collection.lock_mut().replace(values);
+        self.transfer_state
+            .set_neq(TransferState::Loaded(StatusCode::Ok));
+    }
+
     pub fn signal_map<F, U>(&self, f: F) -> impl Signal<Item = U> + use<E, MV, F, U>
     where
         F: FnMut(&[E]) -> U,
@@ -369,6 +375,12 @@ where
         P: FnMut(&E) -> bool,
     {
         self.collection.find_remove_cloned(predicate)
+    }
+
+    pub fn set_externally_loaded_cloned(&self, values: Vec<E>) {
+        self.collection.lock_mut().replace_cloned(values);
+        self.transfer_state
+            .set_neq(TransferState::Loaded(StatusCode::Ok));
     }
 
     pub fn signal_map_cloned<F, U>(&self, f: F) -> impl Signal<Item = U> + use<E, MV, F, U>
