@@ -241,11 +241,9 @@ where
         self.collection.find_set_or_add(predicate, item);
     }
 
-    pub fn replace(&self, values: Vec<E>) -> Vec<E> {
-        let mut collection = self.collection.lock_mut();
-        let current = collection.drain(..).collect();
-        collection.replace(values);
-        current
+    pub fn replace(&self, values: Vec<E>) {
+        self.messages.clear_all();
+        self.collection.lock_mut().replace(values);
     }
 
     pub fn remove<P>(&self, predicate: P) -> bool
@@ -363,11 +361,9 @@ where
         self.collection.find_set_or_add_cloned(predicate, item);
     }
 
-    pub fn replace_cloned(&self, values: Vec<E>) -> Vec<E> {
-        let mut collection = self.collection.lock_mut();
-        let current = collection.drain(..).collect();
-        collection.replace_cloned(values);
-        current
+    pub fn replace_cloned(&self, values: Vec<E>) {
+        self.messages.clear_all();
+        self.collection.lock_mut().replace_cloned(values);
     }
 
     pub fn remove_cloned<P>(&self, predicate: P) -> bool

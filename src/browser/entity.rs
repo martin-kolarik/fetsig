@@ -64,7 +64,7 @@ impl<E, MV> EntityStore<E, MV> {
     }
 
     pub fn replace(&self, entity: Option<E>) -> Option<E> {
-        self.transfer_state.set(TransferState::Empty);
+        self.transfer_state.set(TransferState::Empty); // TODO: is it ok?
         self.messages.clear_all();
         self.entity.replace(entity)
     }
