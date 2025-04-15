@@ -170,6 +170,7 @@ where
         | StatusCode::Forbidden
         | StatusCode::InternalServerError
         | StatusCode::NotFound
+        | StatusCode::Conflict
         | StatusCode::PayloadTooBig
         | StatusCode::RateLimited
         | StatusCode::Unauthorized => match decode_response::<R, MV>(status, response).await {
