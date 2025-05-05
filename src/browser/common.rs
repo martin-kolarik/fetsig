@@ -303,7 +303,7 @@ where
     .map_err(|error| {
         (
             StatusCode::DecodeFailed,
-            SmolStr::from_iter(["Deserialization failed: {}", error.as_str()]),
+            SmolStr::from_iter(["Deserialization failed: ", error.as_str()]),
         )
     })
     .map(|response| Some(response))
