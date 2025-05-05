@@ -8,13 +8,17 @@ format is based on [Keep a Changelog], and this project aims to follow
 
 ### Add
 
-- added `MediaType::Any`
+- `MediaType::Any`
+
+### Change
+
+- `decode_content` can return empty response (`None`)
 
 ## [0.13.1] - 2025-05-05
 
 ### Add
 
-- added `deserialize_content`
+- `deserialize_content`
 
 ### Change
 

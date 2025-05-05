@@ -237,34 +237,37 @@ pub enum DecodeMode {
 pub fn decode_content(
     mode: DecodeMode,
     content: JsValue,
-) -> Result<Vec<u8>, (StatusCode, SmolStr)> {
+) -> Result<Option<Vec<u8>>, (StatusCode, SmolStr)> {
     let data = if content.is_string() {
         if let Some(string) = content.dyn_ref::<JsString>().and_then(|s| s.as_string()) {
             if string.is_empty() {
-                vec![]
+                None
             } else {
-                string.as_bytes().to_vec()
+                Some(string.as_bytes().to_vec())
             }
         } else {
-            vec![]
+            None
         }
     } else {
         // otherwise content is an array buffer
         let array = Uint8Array::new(&content);
         if array.length() == 0 {
-            vec![]
+            None
         } else {
-            array.to_vec()
+            Some(array.to_vec())
         }
     };
 
-    if mode == DecodeMode::Base64 {
-        general_purpose::STANDARD_NO_PAD
-            .decode(data)
-            .map_err(|error| (StatusCode::DecodeFailed, format_smolstr!("{error}")))
-    } else {
-        Ok(data)
-    }
+    data.map(|data| {
+        if mode == DecodeMode::Base64 {
+            general_purpose::STANDARD_NO_PAD
+                .decode(data)
+                .map_err(|error| (StatusCode::DecodeFailed, format_smolstr!("{error}")))
+        } else {
+            Ok(data)
+        }
+    })
+    .transpose()
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -301,9 +304,12 @@ where
     }
 
     let data = decode_content(mode.into(), content)?;
+    let Some(data) = data else {
+        return Ok(None);
+    };
 
     match MV::verify(&data, signature) {
-        Ok(true) => {}
+        Ok(true) => (),
         Ok(false) => Err((
             StatusCode::DecodeFailed,
             "Response signature is invalid.".into(),
