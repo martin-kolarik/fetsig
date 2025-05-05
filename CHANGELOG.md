@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file. The
 format is based on [Keep a Changelog], and this project aims to follow
 [Semantic Versioning].
 
+## [0.12.0] - 2025-05-05
+
+### Change
+
+- removed unnecessary `async` for `decode_content`
+
 ## [0.11.0] - 2025-04-15
 
 ### Added

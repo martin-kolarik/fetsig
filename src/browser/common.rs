@@ -221,16 +221,14 @@ where
         false,
         content_array_buffer,
         signature.as_deref(),
-    )
-    .await
-    {
+    ) {
         Ok(None) => Ok(DecodedResponse::new(status)),
         Ok(Some(response)) => Ok(DecodedResponse::new(status).with_response(response)),
         Err((status, hint)) => Err(DecodedResponse::new(status).with_hint(hint)),
     }
 }
 
-pub async fn decode_content<R, MV>(
+pub fn decode_content<R, MV>(
     media_type: MediaType,
     decode_base64: bool,
     content: JsValue,
