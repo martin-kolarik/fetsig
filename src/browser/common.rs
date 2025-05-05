@@ -142,7 +142,7 @@ impl<R> DecodedResponse<R> {
         self.hint.as_deref()
     }
 
-    fn cast_failure<U>(self) -> DecodedResponse<U> {
+    fn as_empty<U>(self) -> DecodedResponse<U> {
         DecodedResponse {
             status: self.status,
             hint: self.hint,
@@ -158,14 +158,13 @@ where
 {
     let mut fetched = fetch.wait_completion().await;
     let Some(response) = fetched.take_response() else {
-        return fetched.cast_failure();
+        return fetched.as_empty();
     };
 
     let status = fetched.status();
     match status {
         StatusCode::Ok
         | StatusCode::Created
-        | StatusCode::NoContent
         | StatusCode::BadRequest
         | StatusCode::Forbidden
         | StatusCode::InternalServerError
@@ -177,7 +176,7 @@ where
             Ok(result) => result,
             Err(result) => result,
         },
-        _ => fetched.cast_failure(),
+        _ => fetched.as_empty(),
     }
 }
 
