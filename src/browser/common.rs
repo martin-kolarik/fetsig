@@ -216,9 +216,9 @@ where
         .await
         .map_err(|_| DecodedResponse::new(StatusCode::DecodeFailed).with_hint("Decode 2"))?;
 
-    match decode_content::<_, MV>(
+    match deserialize_content::<_, MV>(
         media_type,
-        false,
+        DeserializeMode::Deserialize,
         content_array_buffer,
         signature.as_deref(),
     ) {
@@ -228,9 +228,63 @@ where
     }
 }
 
-pub fn decode_content<R, MV>(
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum DecodeMode {
+    Base64,
+    Plain,
+}
+
+pub fn decode_content(
+    mode: DecodeMode,
+    content: JsValue,
+) -> Result<Vec<u8>, (StatusCode, SmolStr)> {
+    let data = if content.is_string() {
+        if let Some(string) = content.dyn_ref::<JsString>().and_then(|s| s.as_string()) {
+            if string.is_empty() {
+                vec![]
+            } else {
+                string.as_bytes().to_vec()
+            }
+        } else {
+            vec![]
+        }
+    } else {
+        // otherwise content is an array buffer
+        let array = Uint8Array::new(&content);
+        if array.length() == 0 {
+            vec![]
+        } else {
+            array.to_vec()
+        }
+    };
+
+    if mode == DecodeMode::Base64 {
+        general_purpose::STANDARD_NO_PAD
+            .decode(data)
+            .map_err(|error| (StatusCode::DecodeFailed, format_smolstr!("{error}")))
+    } else {
+        Ok(data)
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum DeserializeMode {
+    Base64AndDeserialize,
+    Deserialize,
+}
+
+impl From<DeserializeMode> for DecodeMode {
+    fn from(mode: DeserializeMode) -> Self {
+        match mode {
+            DeserializeMode::Base64AndDeserialize => DecodeMode::Base64,
+            DeserializeMode::Deserialize => DecodeMode::Plain,
+        }
+    }
+}
+
+pub fn deserialize_content<R, MV>(
     media_type: MediaType,
-    decode_base64: bool,
+    mode: DeserializeMode,
     content: JsValue,
     signature: Option<&str>,
 ) -> Result<Option<R>, (StatusCode, SmolStr)>
@@ -246,32 +300,7 @@ where
         _ => Err((StatusCode::UnsupportedMediaType, SmolStr::default()))?,
     }
 
-    let data = if content.is_string() {
-        if let Some(string) = content.dyn_ref::<JsString>().and_then(|s| s.as_string()) {
-            if string.is_empty() {
-                return Ok(None);
-            } else {
-                string.as_bytes().to_vec()
-            }
-        } else {
-            return Ok(None);
-        }
-    } else {
-        // otherwise content is an array buffer
-        let array = Uint8Array::new(&content);
-        if array.length() == 0 {
-            return Ok(None);
-        }
-        array.to_vec()
-    };
-
-    let data = if decode_base64 {
-        general_purpose::STANDARD_NO_PAD
-            .decode(data)
-            .map_err(|error| (StatusCode::DecodeFailed, format_smolstr!("{error}")))?
-    } else {
-        data
-    };
+    let data = decode_content(mode.into(), content)?;
 
     match MV::verify(&data, signature) {
         Ok(true) => {}
