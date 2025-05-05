@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file. The
 format is based on [Keep a Changelog], and this project aims to follow
 [Semantic Versioning].
 
+## [0.14.0] - 2025-05-05
+
+### Add
+
+- added `MediaType::Any`
+
 ## [0.13.1] - 2025-05-05
 
 ### Add

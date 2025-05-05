@@ -4,6 +4,7 @@ use serde::{Deserialize, Deserializer, Serialize};
 use smol_str::SmolStr;
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum MediaType {
+    Any,
     #[default]
     ByteStream,
     Cbor,
@@ -30,6 +31,7 @@ pub enum MediaType {
     Zip7,
 }
 
+const ANY: &str = "*/*";
 const BYTE_STREAM: &str = "application/octet-stream";
 const CBOR: &str = "application/cbor";
 const CSS: &str = "text/css";
@@ -70,6 +72,7 @@ impl Display for MediaType {
 impl From<&str> for MediaType {
     fn from(mime: &str) -> Self {
         match mime {
+            ANY => Self::Any,
             BYTE_STREAM => Self::ByteStream,
             CBOR => Self::Cbor,
             CSS => Self::Css,
@@ -106,30 +109,33 @@ impl From<SmolStr> for MediaType {
 
 impl AsRef<str> for MediaType {
     fn as_ref(&self) -> &str {
+        use MediaType::*;
+
         match self {
-            MediaType::ByteStream => BYTE_STREAM,
-            MediaType::Cbor => CBOR,
-            MediaType::Css => CSS,
-            MediaType::Form => FORM,
-            MediaType::FormMultipart => MULTIPART_FORM,
-            MediaType::Html => HTML,
-            MediaType::Ico => ICO,
-            MediaType::Javascript => JAVASCRIPT,
-            MediaType::Jpeg => JPEG,
-            MediaType::Json => JSON,
-            MediaType::Pdf => PDF,
-            MediaType::Plain => PLAIN,
-            MediaType::Png => PNG,
-            MediaType::Postcard => POSTCARD,
-            MediaType::Pwg => PWG,
-            MediaType::Sse => SSE,
-            MediaType::Svg => SVG,
-            MediaType::Urf => URF,
-            MediaType::Wasm => WASM,
-            MediaType::Xml => XML,
-            MediaType::Xlsx => XLSX,
-            MediaType::Zip => ZIP,
-            MediaType::Zip7 => ZIP_7,
+            Any => ANY,
+            ByteStream => BYTE_STREAM,
+            Cbor => CBOR,
+            Css => CSS,
+            Form => FORM,
+            FormMultipart => MULTIPART_FORM,
+            Html => HTML,
+            Ico => ICO,
+            Javascript => JAVASCRIPT,
+            Jpeg => JPEG,
+            Json => JSON,
+            Pdf => PDF,
+            Plain => PLAIN,
+            Png => PNG,
+            Postcard => POSTCARD,
+            Pwg => PWG,
+            Sse => SSE,
+            Svg => SVG,
+            Urf => URF,
+            Wasm => WASM,
+            Xml => XML,
+            Xlsx => XLSX,
+            Zip => ZIP,
+            Zip7 => ZIP_7,
         }
     }
 }
