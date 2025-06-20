@@ -156,11 +156,11 @@ impl<E, MV> CollectionStore<E, MV> {
         self.collection.lock_ref().iter().all(f)
     }
 
-    pub fn lock_ref(&self) -> MutableVecLockRef<E> {
+    pub fn lock_ref(&self) -> MutableVecLockRef<'_, E> {
         self.collection.lock_ref()
     }
 
-    pub fn lock_mut(&self) -> MutableVecLockMut<E> {
+    pub fn lock_mut(&self) -> MutableVecLockMut<'_, E> {
         self.collection.lock_mut()
     }
 

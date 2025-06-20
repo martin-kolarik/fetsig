@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file. The
 format is based on [Keep a Changelog], and this project aims to follow
 [Semantic Versioning].
 
+## [0.15.0] - 2025-06-20
+
+### Added
+
+- `PostcardSerialize::to_postcard_base64`, `PostcardDeserialize::try_from_postcard_base64` added
+
 ## [0.14.0] - 2025-05-05
 
 ### Add

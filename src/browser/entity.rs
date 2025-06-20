@@ -267,11 +267,11 @@ impl<E, MV> EntityStore<E, MV> {
         self.entity.signal_map_some_default(f)
     }
 
-    pub fn lock_ref(&self) -> MutableLockRef<Option<E>> {
+    pub fn lock_ref(&self) -> MutableLockRef<'_, Option<E>> {
         self.entity.lock_ref()
     }
 
-    pub fn lock_mut(&self) -> MutableLockMut<Option<E>> {
+    pub fn lock_mut(&self) -> MutableLockMut<'_, Option<E>> {
         self.entity.lock_mut()
     }
 

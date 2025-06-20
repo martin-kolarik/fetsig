@@ -47,6 +47,7 @@ pub use postcard::*;
 mod postcard {
     use std::io::Write;
 
+    use base64::{Engine, engine::general_purpose};
     use postcard::{ser_flavors::Flavor, serialize_with_flavor};
     use serde::{Serialize, de::DeserializeOwned};
     use smol_str::SmolStr;
@@ -96,6 +97,10 @@ mod postcard {
                 Err(_) => vec![],
             }
         }
+
+        fn to_postcard_base64(&self) -> SmolStr {
+            general_purpose::STANDARD.encode(self.to_postcard()).into()
+        }
     }
 
     pub trait PostcardDeserialize
@@ -106,6 +111,18 @@ mod postcard {
             postcard::from_bytes::<Self>(postcard).map_err(|e| {
                 uformat_smolstr!("Deserialization (postcard) failed: {}", e.to_string())
             })
+        }
+
+        fn try_from_postcard_base64(base64: impl AsRef<[u8]>) -> Result<Self, SmolStr> {
+            general_purpose::STANDARD
+                .decode(base64)
+                .map_err(|e| {
+                    uformat_smolstr!(
+                        "Deserialization (base64 of postcard) failed: {}",
+                        e.to_string()
+                    )
+                })
+                .and_then(|postcard| Self::try_from_postcard(&postcard))
         }
     }
 
