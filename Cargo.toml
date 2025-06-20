@@ -1,6 +1,6 @@
 [package]
 name = "fetsig"
-version = "0.15.0"
+version = "0.15.1"
 authors = ["martin.kolarik@smartcontrol.cz"]
 description = "Web-sys based browser fetch library using futures-signals with optional MAC."
 edition = "2024"
@@ -11,7 +11,6 @@ homepage = "https://github.com/martin-kolarik/fetsig"
 [features]
 default = ["browser", "json", "postcard"]
 browser = [
-    "dep:base64",
     "dep:js-sys",
     "dep:wasm-bindgen",
     "dep:wasm-bindgen-futures",
@@ -22,9 +21,7 @@ postcard = ["dep:postcard"]
 
 [dependencies]
 artwrap = { version = "^0.2" }
-base64 = { version = "^0.22", default-features = false, features = [
-    "std",
-], optional = true }
+base64 = { version = "^0.22", default-features = false, features = ["std"] }
 futures-signals = { version = "^0.3", default-features = false, features = [
     "serde",
 ] }
