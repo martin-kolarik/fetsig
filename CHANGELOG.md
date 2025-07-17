@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file. The
 format is based on [Keep a Changelog], and this project aims to follow
 [Semantic Versioning].
 
+## [0.15.2] - 2025-07-17
+
+- dependencies versions updated
+
+### Changed
+
 ## [0.15.1] - 2025-06-20
 
 ### Added
