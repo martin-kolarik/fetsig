@@ -133,7 +133,8 @@ impl<'a> Request<'a> {
     }
 
     #[must_use]
-    pub fn encoding(mut self, media_type: MediaType) -> Self {
+    pub fn encoding(mut self, media_type: impl Into<MediaType>) -> Self {
+        let media_type = media_type.into();
         let media_type = match media_type {
             #[cfg(feature = "json")]
             MediaType::Json => MediaType::Json,
@@ -152,7 +153,8 @@ impl<'a> Request<'a> {
     }
 
     #[must_use]
-    pub fn encoding_with_response(mut self, media_type: MediaType) -> Self {
+    pub fn encoding_with_response(mut self, media_type: impl Into<MediaType>) -> Self {
+        let media_type = media_type.into();
         let media_type = match media_type {
             #[cfg(feature = "json")]
             MediaType::Json => MediaType::Json,

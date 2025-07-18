@@ -4,11 +4,17 @@ All notable changes to this project will be documented in this file. The
 format is based on [Keep a Changelog], and this project aims to follow
 [Semantic Versioning].
 
-## [0.15.2] - 2025-07-17
-
-- dependencies versions updated
+## [0.16.0] - 2025-07-18
 
 ### Changed
+
+- `Request.encoding*` methods modified to accept `impl Into<MediaType>`
+
+## [0.15.2] - 2025-07-17
+
+### Changed
+
+- dependencies versions updated
 
 ## [0.15.1] - 2025-06-20
 
