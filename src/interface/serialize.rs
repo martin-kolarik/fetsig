@@ -18,12 +18,10 @@ mod json {
                 .map_err(|e| uformat_smolstr!("Serialization (json) failed: {}", e.to_string()))
         }
 
-        fn to_json(&self) -> Vec<u8> {
+        fn to_json(&self) -> Result<Vec<u8>, SmolStr> {
             let mut buffer = Vec::with_capacity(8192);
-            match self.write_json(&mut buffer) {
-                Ok(_) => buffer,
-                Err(_) => vec![],
-            }
+            self.write_json(&mut buffer)?;
+            Ok(buffer)
         }
     }
 
@@ -90,16 +88,15 @@ mod postcard {
                 .map_err(|e| uformat_smolstr!("Serialization (postcard) failed: {}", e.to_string()))
         }
 
-        fn to_postcard(&self) -> Vec<u8> {
+        fn to_postcard(&self) -> Result<Vec<u8>, SmolStr> {
             let mut buffer = Vec::with_capacity(4096);
-            match self.write_postcard(&mut buffer) {
-                Ok(_) => buffer,
-                Err(_) => vec![],
-            }
+            self.write_postcard(&mut buffer)?;
+            Ok(buffer)
         }
 
-        fn to_postcard_base64(&self) -> SmolStr {
-            general_purpose::STANDARD.encode(self.to_postcard()).into()
+        fn to_postcard_base64(&self) -> Result<SmolStr, SmolStr> {
+            self.to_postcard()
+                .map(|payload| general_purpose::STANDARD.encode(payload).into())
         }
     }
 

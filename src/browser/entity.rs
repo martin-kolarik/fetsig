@@ -611,6 +611,15 @@ fn store<E, R, C, MS, MV>(
                 return;
             }
         };
+        let bytes = match bytes {
+            Ok(bytes) => bytes,
+            Err(error) => {
+                if request.logging() {
+                    error!("Cannot serialize entity: {error}");
+                }
+                return;
+            }
+        };
 
         if let Some(signature) = MS::sign(bytes.as_ref()) {
             request = request.with_header(HEADER_SIGNATURE, signature);
@@ -645,7 +654,7 @@ pub(super) fn fetch<R, C, MV>(
         Ok(future) => future,
         Err(error) => {
             if logging {
-                debug!("Request failed at init, error: {}", error);
+                debug!("Request failed at init, error: {error}");
             }
             result_callback(StatusCode::BadRequest);
             transfer_state.lock_mut().stop(StatusCode::FetchFailed);

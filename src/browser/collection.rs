@@ -578,6 +578,15 @@ where
                         return;
                     }
                 };
+                let bytes = match bytes {
+                    Ok(bytes) => bytes,
+                    Err(error) => {
+                        if request.logging() {
+                            error!("Cannot serialize collection: {error}");
+                        }
+                        return;
+                    }
+                };
 
                 if let Some(signature) = MS::sign(bytes.as_ref()) {
                     request = request.with_header(HEADER_SIGNATURE, signature);
@@ -618,7 +627,7 @@ fn fetch<E, F, C, MV>(
         Ok(future) => future,
         Err(error) => {
             if logging {
-                debug!("Request failed at init, error: {}", error);
+                debug!("Request failed at init, error: {error}");
             }
             result_callback(StatusCode::BadRequest);
             transfer_state.lock_mut().stop(StatusCode::FetchFailed);
@@ -695,13 +704,13 @@ where
         (status, Some(response)) => {
             let (response_entities, response_messages, response_paging) = response.take();
             messages.replace(response_messages);
-            if status.is_success() {
-                if let Some(response_entities) = response_entities {
-                    if logging {
-                        trace!("Request successfully fetched collection.");
-                    }
-                    store_fn(response_entities);
+            if status.is_success()
+                && let Some(response_entities) = response_entities
+            {
+                if logging {
+                    trace!("Request successfully fetched collection.");
                 }
+                store_fn(response_entities);
             }
             *paging.lock_mut() = response_paging;
             status

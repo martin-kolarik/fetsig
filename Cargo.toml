@@ -1,6 +1,6 @@
 [package]
 name = "fetsig"
-version = "0.16.0"
+version = "0.17.0"
 authors = ["martin.kolarik@smartcontrol.cz"]
 description = "Web-sys based browser fetch library using futures-signals with optional MAC."
 edition = "2024"
