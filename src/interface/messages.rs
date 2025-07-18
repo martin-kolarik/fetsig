@@ -10,7 +10,7 @@ use futures_signals::{
     signal_vec::{MutableVec, SignalVec},
 };
 use futures_signals_ext::{MutableExt, MutableVecExt, SignalExtMapOption};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use smol_str::{SmolStr, ToSmolStr, format_smolstr};
 
 #[derive(Default, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
@@ -84,11 +84,34 @@ impl Message {
     }
 }
 
-#[derive(Default, Clone, Serialize, Deserialize)]
+#[derive(Default, Clone)]
 pub struct Messages {
-    #[serde(skip)]
     error: Mutable<bool>,
     messages: MutableBTreeMap<SmolStr, MutableVec<Message>>,
+}
+
+impl Serialize for Messages {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        self.messages.serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for Messages {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let messages = <MutableBTreeMap<SmolStr, MutableVec<Message>> as Deserialize>::deserialize(
+            deserializer,
+        )?;
+        Ok(Self {
+            error: Mutable::new(false),
+            messages,
+        })
+    }
 }
 
 impl From<&str> for Messages {

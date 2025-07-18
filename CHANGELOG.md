@@ -4,17 +4,16 @@ All notable changes to this project will be documented in this file. The
 format is based on [Keep a Changelog], and this project aims to follow
 [Semantic Versioning].
 
-## [0.17.0] - 2025-07-18
+## [0.16.0, 0.17.0, 0.18.0] - 2025-07-18
 
 ### Added
 
 - return error if serialization fails
 
-## [0.16.0] - 2025-07-18
-
 ### Changed
 
 - `Request.encoding*` methods modified to accept `impl Into<MediaType>`
+- `Messages` de/serialization
 
 ## [0.15.2] - 2025-07-17
 
