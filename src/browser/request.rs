@@ -91,6 +91,7 @@ impl<'a> Request<'a> {
     #[must_use]
     pub fn with_header(mut self, name: &'static str, value: impl ToSmolStr) -> Self {
         let mut headers = self.headers.take().unwrap_or_default();
+        headers.retain(|(header, _)| *header != name);
         headers.push((name, value.to_smolstr()));
         self.headers = Some(headers);
         self
@@ -98,7 +99,14 @@ impl<'a> Request<'a> {
 
     #[must_use]
     pub fn with_headers(mut self, headers: Option<Vec<(&'static str, SmolStr)>>) -> Self {
-        self.headers = headers;
+        if let Some(new_headers) = headers {
+            let mut headers = self.headers.take().unwrap_or_default();
+            for new_header in new_headers {
+                headers.retain(|(header, _)| *header != new_header.0);
+                headers.push((new_header.0, new_header.1));
+            }
+            self.headers = Some(headers);
+        }
         self
     }
 
