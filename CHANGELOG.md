@@ -4,11 +4,13 @@ All notable changes to this project will be documented in this file. The
 format is based on [Keep a Changelog], and this project aims to follow
 [Semantic Versioning].
 
-## [0.18.1] - 2025-07-20
+## [0.18.1, 0.19.0] - 2025-07-20
 
 ### Fixed
 
 - `Request::with_headers` does not clear existing headers
+
+- failure when `json` without `postcard` cargo feature is selected
 
 ## [0.16.0, 0.17.0, 0.18.0] - 2025-07-18
 

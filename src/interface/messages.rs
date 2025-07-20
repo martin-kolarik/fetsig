@@ -104,12 +104,11 @@ impl<'de> Deserialize<'de> for Messages {
     where
         D: Deserializer<'de>,
     {
-        let messages = <MutableBTreeMap<SmolStr, MutableVec<Message>> as Deserialize>::deserialize(
-            deserializer,
-        )?;
-        Ok(Self {
-            error: Mutable::new(false),
-            messages,
+        <MutableBTreeMap<SmolStr, MutableVec<Message>>>::deserialize(deserializer).map(|messages| {
+            Self {
+                error: Mutable::new(false),
+                messages,
+            }
         })
     }
 }
@@ -194,7 +193,7 @@ impl Messages {
     }
 
     pub fn into_inner(self) -> BTreeMap<SmolStr, MutableVec<Message>> {
-        self.messages.lock_ref().deref().clone() // TODO: mem::replace? mem::take?
+        self.messages.lock_ref().deref().clone()
     }
 
     #[must_use]
