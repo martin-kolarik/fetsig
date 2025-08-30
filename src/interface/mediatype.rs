@@ -16,6 +16,7 @@ pub enum MediaType {
     Javascript,
     Jpeg,
     Json,
+    Mp4,
     Pdf,
     Plain,
     Png,
@@ -42,6 +43,7 @@ const ICO: &str = "image/x-icon";
 const JAVASCRIPT: &str = "application/javascript";
 const JPEG: &str = "image/jpeg";
 const JSON: &str = "application/json";
+const MP4: &str = "video/mp4";
 const PDF: &str = "application/pdf";
 const PLAIN: &str = "text/plain";
 const PNG: &str = "image/png";
@@ -83,6 +85,7 @@ impl From<&str> for MediaType {
             JAVASCRIPT => Self::Javascript,
             JPEG => Self::Jpeg,
             JSON => Self::Json,
+            MP4 => Self::Mp4,
             PDF => Self::Pdf,
             PNG => Self::Png,
             POSTCARD => Self::Postcard,
@@ -123,6 +126,7 @@ impl AsRef<str> for MediaType {
             Javascript => JAVASCRIPT,
             Jpeg => JPEG,
             Json => JSON,
+            Mp4 => MP4,
             Pdf => PDF,
             Plain => PLAIN,
             Png => PNG,

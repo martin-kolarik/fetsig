@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file. The
 format is based on [Keep a Changelog], and this project aims to follow
 [Semantic Versioning].
 
+## [0.20.0] - 2025-08-30
+
+### Added
+
+- `MediaType::Mp4`
+
 ## [0.18.1, 0.19.0] - 2025-07-20
 
 ### Fixed
