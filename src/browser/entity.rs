@@ -180,9 +180,9 @@ impl<E, MV> EntityStore<E, MV> {
     }
 
     #[inline]
-    pub fn signal_map<F, U>(&self, f: F) -> impl Signal<Item = Option<U>> + use<E, MV, F, U>
+    pub fn signal_map<F, U>(&self, f: F) -> impl Signal<Item = U> + use<E, MV, F, U>
     where
-        F: FnMut(Option<&E>) -> Option<U>,
+        F: FnMut(Option<&E>) -> U,
     {
         self.entity.signal_map(f)
     }

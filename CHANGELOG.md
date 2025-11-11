@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file. The
 format is based on [Keep a Changelog], and this project aims to follow
 [Semantic Versioning].
 
+## [0.21.0] - 2025-11-11
+
+### Changed
+
+- `EntityStore::signal_map` changed to not to return `Option`
+
 ## [0.20.0] - 2025-08-30
 
 ### Added
