@@ -1,4 +1,6 @@
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+use ufmt::derive::uDebug;
+
+#[derive(Debug, uDebug, Clone, Copy, PartialEq, Eq)]
 pub enum StatusCode {
     Undefined = 900,
 

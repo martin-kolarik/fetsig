@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file. The
 format is based on [Keep a Changelog], and this project aims to follow
 [Semantic Versioning].
 
+## [0.22.0] - 2025-11-26
+
+### Changed
+
+- `StatusCode` implements `uDebug`
+
 ## [0.21.0] - 2025-11-11
 
 ### Changed
