@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file. The
 format is based on [Keep a Changelog], and this project aims to follow
 [Semantic Versioning].
 
+## [0.23.0] - 2025-12-30
+
+### Changed
+
+- `Messages` functions `impl ToSmolStr` parameters, where ownership is not taken, changed to references
+
 ## [0.22.0] - 2025-11-26
 
 ### Changed
