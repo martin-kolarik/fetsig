@@ -230,13 +230,13 @@ impl Messages {
         self.error.set_neq(false);
     }
 
-    pub fn set(&self, key: &impl ToSmolStr, message_type: MessageType, message: impl ToSmolStr) {
+    pub fn set(&self, key: impl ToSmolStr, message_type: MessageType, message: impl ToSmolStr) {
         self.set_with_pars(key, message_type, message, [""; 0]);
     }
 
     pub fn set_with_pars(
         &self,
-        key: &impl ToSmolStr,
+        key: impl ToSmolStr,
         message_type: MessageType,
         text: impl ToSmolStr,
         parameters: impl IntoIterator<Item = impl ToSmolStr>,
@@ -271,14 +271,14 @@ impl Messages {
             .set_neq(self.error.get() || message_type == MessageType::Error);
     }
 
-    pub fn clear(&self, key: &impl ToSmolStr) {
+    pub fn clear(&self, key: impl ToSmolStr) {
         self.messages.lock_mut().remove(&key.to_smolstr());
         self.evaluate_error();
     }
 
     pub fn anything_for_key_signal<S: ToSmolStr>(
         &self,
-        key: &S,
+        key: S,
     ) -> impl Signal<Item = bool> + use<S> {
         self.messages
             .signal_map_cloned()
@@ -286,7 +286,7 @@ impl Messages {
             .map_some_default(|messages| !messages.lock_ref().is_empty())
     }
 
-    pub fn error_for_key_signal<S: ToSmolStr>(&self, key: &S) -> impl Signal<Item = bool> + use<S> {
+    pub fn error_for_key_signal<S: ToSmolStr>(&self, key: S) -> impl Signal<Item = bool> + use<S> {
         self.messages
             .signal_map_cloned()
             .key_cloned(key.to_smolstr())
@@ -295,7 +295,7 @@ impl Messages {
 
     pub fn messages_for_key_signal_vec<S: ToSmolStr>(
         &self,
-        key: &S,
+        key: S,
     ) -> impl SignalVec<Item = Message> + use<S> {
         self.messages
             .signal_map_cloned()

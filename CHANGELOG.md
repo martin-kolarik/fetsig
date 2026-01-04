@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file. The
 format is based on [Keep a Changelog], and this project aims to follow
 [Semantic Versioning].
 
+## [0.24.0] - 2026-01-04
+
+### Changed
+
+- revert: `Messages` functions `impl ToSmolStr` parameters changed to references, client can, or need not, choose to use & themselves
+
+- `Entity` and `Collection` Debug derive removed
+
 ## [0.23.0] - 2025-12-30
 
 ### Changed
