@@ -25,7 +25,6 @@ use super::{
     transferstate::TransferState,
 };
 
-#[derive(Debug)]
 pub struct EntityStore<E, MV = NoMac> {
     transfer_state: Mutable<TransferState>,
     messages: Messages,

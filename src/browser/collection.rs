@@ -29,7 +29,6 @@ use super::{
     transferstate::TransferState,
 };
 
-#[derive(Debug)]
 pub struct CollectionStore<E, MV = NoMac> {
     transfer_state: Mutable<TransferState>,
     messages: Messages,
