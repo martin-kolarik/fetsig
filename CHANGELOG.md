@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file. The
 format is based on [Keep a Changelog], and this project aims to follow
 [Semantic Versioning].
 
+## [0.25.0] - 2026-02-27
+
+- `artwrap` version bumped up
+
+### Changed
+
 ## [0.24.0] - 2026-01-04
 
 ### Changed
