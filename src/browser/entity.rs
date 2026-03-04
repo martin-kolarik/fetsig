@@ -42,6 +42,7 @@ impl<E, MV> EntityStore<E, MV> {
         }
     }
 
+    #[inline]
     pub fn new_default() -> Self
     where
         E: Default,
@@ -55,6 +56,7 @@ impl<E, MV> EntityStore<E, MV> {
         self.set(entity);
     }
 
+    #[inline]
     pub fn reset_to_default(&self)
     where
         E: Default,
@@ -84,14 +86,17 @@ impl<E, MV> EntityStore<E, MV> {
         self.entity.signal_ref(Option::is_some).dedupe()
     }
 
+    #[inline]
     pub fn invalidate(&self) {
         self.transfer_state.set(TransferState::Empty);
     }
 
+    #[inline]
     pub fn transfer_state(&self) -> &Mutable<TransferState> {
         &self.transfer_state
     }
 
+    #[inline]
     pub fn set_transfer_state(&self, transfer_state: TransferState) {
         self.transfer_state.set_neq(transfer_state);
     }
@@ -100,6 +105,7 @@ impl<E, MV> EntityStore<E, MV> {
         self.transfer_state.lock_mut().reset_error();
     }
 
+    #[inline]
     pub fn loaded(&self) -> bool {
         self.transfer_state.map(TransferState::loaded)
     }
@@ -110,6 +116,7 @@ impl<E, MV> EntityStore<E, MV> {
             .dedupe()
     }
 
+    #[inline]
     pub fn loaded_status(&self) -> Option<StatusCode> {
         self.transfer_state.map(TransferState::loaded_status)
     }
@@ -120,6 +127,7 @@ impl<E, MV> EntityStore<E, MV> {
             .dedupe()
     }
 
+    #[inline]
     pub fn stored(&self) -> bool {
         self.transfer_state.map(TransferState::stored)
     }
@@ -130,6 +138,7 @@ impl<E, MV> EntityStore<E, MV> {
             .dedupe()
     }
 
+    #[inline]
     pub fn stored_status(&self) -> Option<StatusCode> {
         self.transfer_state.map(TransferState::stored_status)
     }
@@ -140,6 +149,7 @@ impl<E, MV> EntityStore<E, MV> {
             .dedupe()
     }
 
+    #[inline]
     pub fn pending(&self) -> bool {
         self.transfer_state.map(TransferState::pending)
     }
@@ -150,10 +160,12 @@ impl<E, MV> EntityStore<E, MV> {
             .dedupe()
     }
 
+    #[inline]
     pub fn entity(&self) -> &MutableOption<E> {
         &self.entity
     }
 
+    #[inline]
     pub fn messages(&self) -> &Messages {
         &self.messages
     }
@@ -167,6 +179,7 @@ impl<E, MV> EntityStore<E, MV> {
             .dedupe()
     }
 
+    #[inline]
     pub fn messages_error_signal(&self) -> impl Signal<Item = bool> + use<E, MV> {
         self.messages.error_signal()
     }
@@ -276,23 +289,16 @@ impl<E, MV> EntityStore<E, MV> {
 
     pub fn inspect<F>(&self, f: F)
     where
-        F: FnOnce(&E),
+        F: FnMut(&E),
     {
         let _ = self.entity.lock_ref().as_ref().map(f);
     }
 
     pub fn inspect_mut<F>(&self, f: F)
     where
-        F: FnOnce(&mut E),
+        F: FnMut(&mut E),
     {
         self.entity.lock_mut().as_mut().map(f);
-    }
-
-    pub fn inspect_mut_map<F, U>(&self, f: F) -> Option<U>
-    where
-        F: FnOnce(&mut E) -> U,
-    {
-        self.entity.lock_mut().as_mut().map(f)
     }
 
     pub fn map<F, U>(&self, f: F) -> Option<U>
@@ -300,6 +306,13 @@ impl<E, MV> EntityStore<E, MV> {
         F: FnOnce(&E) -> U,
     {
         self.entity.lock_ref().as_ref().map(f)
+    }
+
+    pub fn map_mut<F, U>(&self, f: F) -> Option<U>
+    where
+        F: FnOnce(&mut E) -> U,
+    {
+        self.entity.lock_mut().as_mut().map(f)
     }
 
     pub fn map_or_default<F, U>(&self, f: F) -> U

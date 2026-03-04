@@ -4,11 +4,19 @@ All notable changes to this project will be documented in this file. The
 format is based on [Keep a Changelog], and this project aims to follow
 [Semantic Versioning].
 
-## [0.25.0] - 2026-02-27
-
-- `artwrap` version bumped up
+## [0.26.0] - 2026-03-04
 
 ### Changed
+
+- `futures-signals-ext` version bumped up
+
+- `CollectionStore::inspect` renamed to `CollectionStore::inspect_vec`
+
+## [0.25.0] - 2026-02-27
+
+### Changed
+
+- `artwrap` version bumped up
 
 ## [0.24.0] - 2026-01-04
 

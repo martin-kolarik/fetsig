@@ -38,6 +38,7 @@ pub struct CollectionStore<E, MV = NoMac> {
 }
 
 impl<E, MV> CollectionStore<E, MV> {
+    #[inline]
     pub fn new() -> Self {
         Self::new_value(vec![])
     }
@@ -59,22 +60,27 @@ impl<E, MV> CollectionStore<E, MV> {
         self.collection.lock_mut().clear();
     }
 
+    #[inline]
     pub fn invalidate(&self) {
         self.transfer_state.set_neq(TransferState::Empty);
     }
 
+    #[inline]
     pub fn transfer_state(&self) -> TransferState {
         self.transfer_state.get()
     }
 
+    #[inline]
     pub fn set_transfer_state(&self, transfer_state: TransferState) {
         self.transfer_state.set_neq(transfer_state);
     }
 
+    #[inline]
     pub fn reset_transfer_error(&self) {
         self.transfer_state.lock_mut().reset_error();
     }
 
+    #[inline]
     pub fn loaded(&self) -> bool {
         self.transfer_state.map(TransferState::loaded)
     }
@@ -85,6 +91,7 @@ impl<E, MV> CollectionStore<E, MV> {
             .dedupe()
     }
 
+    #[inline]
     pub fn loaded_status(&self) -> Option<StatusCode> {
         self.transfer_state.map(TransferState::loaded_status)
     }
@@ -95,6 +102,7 @@ impl<E, MV> CollectionStore<E, MV> {
             .dedupe()
     }
 
+    #[inline]
     pub fn stored(&self) -> bool {
         self.transfer_state.map(TransferState::stored)
     }
@@ -105,6 +113,7 @@ impl<E, MV> CollectionStore<E, MV> {
             .dedupe()
     }
 
+    #[inline]
     pub fn stored_status(&self) -> Option<StatusCode> {
         self.transfer_state.map(TransferState::stored_status)
     }
@@ -115,6 +124,7 @@ impl<E, MV> CollectionStore<E, MV> {
             .dedupe()
     }
 
+    #[inline]
     pub fn pending(&self) -> bool {
         self.transfer_state.map(TransferState::pending)
     }
@@ -125,14 +135,17 @@ impl<E, MV> CollectionStore<E, MV> {
             .dedupe()
     }
 
+    #[inline]
     pub fn collection(&self) -> &MutableVec<E> {
         &self.collection
     }
 
+    #[inline]
     pub fn messages(&self) -> &Messages {
         &self.messages
     }
 
+    #[inline]
     pub fn paging(&self) -> &Mutable<Paging> {
         &self.paging
     }
@@ -163,18 +176,36 @@ impl<E, MV> CollectionStore<E, MV> {
         self.collection.lock_mut()
     }
 
-    pub fn inspect<F>(&self, f: F)
+    #[inline]
+    pub fn map_vec<F, U>(&self, f: F) -> U
     where
-        F: FnOnce(&[E]),
+        F: FnOnce(&[E]) -> U,
     {
-        self.collection.inspect(f)
+        self.collection.map_vec(f)
     }
 
-    pub fn inspect_mut<F>(&self, f: F)
+    #[inline]
+    pub fn map_vec_mut<F, U>(&self, f: F) -> U
     where
-        F: FnOnce(&mut MutableVecLockMut<E>),
+        F: FnOnce(&mut MutableVecLockMut<E>) -> U,
     {
-        self.collection.inspect_mut(f)
+        self.collection.map_vec_mut(f)
+    }
+
+    #[inline]
+    pub fn inspect_vec<F>(&self, f: F)
+    where
+        F: FnMut(&[E]),
+    {
+        self.collection.inspect_vec(f)
+    }
+
+    #[inline]
+    pub fn inspect_vec_mut<F>(&self, f: F)
+    where
+        F: FnMut(&mut MutableVecLockMut<E>),
+    {
+        self.collection.inspect_vec_mut(f)
     }
 
     pub fn find_map<F, U>(&self, f: F) -> Option<U>
@@ -183,26 +214,17 @@ impl<E, MV> CollectionStore<E, MV> {
     {
         self.collection.lock_ref().iter().find_map(f)
     }
-
-    pub fn map_vec<F, U>(&self, f: F) -> U
-    where
-        F: FnOnce(&[E]) -> U,
-    {
-        self.collection.map_vec(f)
-    }
-
-    pub fn map_vec_mut<F, U>(&self, f: F) -> U
-    where
-        F: FnOnce(&mut MutableVecLockMut<E>) -> U,
-    {
-        self.collection.map_vec_mut(f)
-    }
 }
 
 impl<E, MV> CollectionStore<E, MV>
 where
     E: Copy,
 {
+    #[inline]
+    pub fn get(&self) -> Vec<E> {
+        self.collection.lock_ref().to_vec()
+    }
+
     pub fn empty_signal(&self) -> impl Signal<Item = bool> + use<E, MV> {
         self.collection.signal_vec().is_empty().dedupe()
     }
@@ -218,6 +240,7 @@ where
         self.find_map(|e| f(e).then_some(*e))
     }
 
+    #[inline]
     pub fn find_inspect_mut<P, F>(&self, predicate: P, f: F) -> Option<bool>
     where
         P: FnMut(&E) -> bool,
@@ -226,6 +249,7 @@ where
         self.collection.find_inspect_mut(predicate, f)
     }
 
+    #[inline]
     pub fn find_set<P>(&self, predicate: P, item: E) -> bool
     where
         P: FnMut(&E) -> bool,
@@ -233,6 +257,7 @@ where
         self.collection.find_set(predicate, item)
     }
 
+    #[inline]
     pub fn find_set_or_add<P>(&self, predicate: P, item: E)
     where
         P: FnMut(&E) -> bool,
@@ -248,6 +273,7 @@ where
         current
     }
 
+    #[inline]
     pub fn remove<P>(&self, predicate: P) -> bool
     where
         P: FnMut(&E) -> bool,
@@ -268,10 +294,12 @@ where
         self.collection.signal_vec().to_signal_map(f)
     }
 
+    #[inline]
     pub fn signal_vec(&self) -> MutableSignalVec<E> {
         self.collection.signal_vec()
     }
 
+    #[inline]
     pub fn signal_vec_filter<F>(&self, f: F) -> impl SignalVec<Item = E> + use<E, MV, F>
     where
         F: FnMut(&E) -> bool,
@@ -279,6 +307,7 @@ where
         self.collection.signal_vec_filter(f)
     }
 
+    #[inline]
     pub fn signal_vec_filter_signal<F, U>(
         &self,
         f: F,
@@ -320,6 +349,11 @@ impl<E, MV> CollectionStore<E, MV>
 where
     E: Clone,
 {
+    #[inline]
+    pub fn get_cloned(&self) -> Vec<E> {
+        self.collection.lock_ref().to_vec()
+    }
+
     pub fn empty_signal_cloned(&self) -> impl Signal<Item = bool> + use<E, MV> {
         self.collection.signal_vec_cloned().is_empty().dedupe()
     }
@@ -337,6 +371,7 @@ where
         self.find_map(|e| f(e).then(|| e.clone()))
     }
 
+    #[inline]
     pub fn find_inspect_mut_cloned<P, F>(&self, predicate: P, f: F) -> Option<bool>
     where
         P: FnMut(&E) -> bool,
@@ -345,10 +380,7 @@ where
         self.collection.find_inspect_mut_cloned(predicate, f)
     }
 
-    pub fn get_cloned(&self) -> Vec<E> {
-        self.collection.lock_ref().to_vec()
-    }
-
+    #[inline]
     pub fn find_set_cloned<P>(&self, predicate: P, item: E) -> bool
     where
         P: FnMut(&E) -> bool,
@@ -356,6 +388,7 @@ where
         self.collection.find_set_cloned(predicate, item)
     }
 
+    #[inline]
     pub fn find_set_or_add_cloned<P>(&self, predicate: P, item: E)
     where
         P: FnMut(&E) -> bool,
@@ -371,6 +404,7 @@ where
         current
     }
 
+    #[inline]
     pub fn remove_cloned<P>(&self, predicate: P) -> bool
     where
         P: FnMut(&E) -> bool,
@@ -391,10 +425,12 @@ where
         self.collection.signal_vec_cloned().to_signal_map(f)
     }
 
+    #[inline]
     pub fn signal_vec_cloned(&self) -> MutableSignalVec<E> {
         self.collection.signal_vec_cloned()
     }
 
+    #[inline]
     pub fn signal_vec_filter_cloned<F>(&self, f: F) -> impl SignalVec<Item = E> + use<E, MV, F>
     where
         F: FnMut(&E) -> bool,
@@ -402,6 +438,7 @@ where
         self.collection.signal_vec_filter_cloned(f)
     }
 
+    #[inline]
     pub fn signal_vec_filter_signal_cloned<F, U>(
         &self,
         f: F,
