@@ -15,6 +15,15 @@ impl TransferState {
         matches!(*self, Self::PendingLoad | Self::PendingStore)
     }
 
+    pub fn as_load(self) -> OperationState {
+        match self {
+            Self::Empty | Self::PendingStore | Self::Stored(_) => OperationState::Empty,
+            Self::PendingLoad => OperationState::Pending,
+            Self::Loaded(status) => OperationState::Completed(status),
+        }
+    }
+
+    #[inline]
     pub fn loaded(&self) -> bool {
         matches!(*self, Self::Loaded(status) if status.is_success())
     }
@@ -24,6 +33,14 @@ impl TransferState {
             Some(*status)
         } else {
             None
+        }
+    }
+
+    pub fn as_store(self) -> OperationState {
+        match self {
+            Self::Empty | Self::PendingLoad | Self::Loaded(_) => OperationState::Empty,
+            Self::PendingStore => OperationState::Pending,
+            Self::Stored(status) => OperationState::Completed(status),
         }
     }
 
@@ -69,5 +86,45 @@ impl TransferState {
             Self::PendingStore | Self::Stored(..) => Self::Stored(status),
             _ => Self::Loaded(StatusCode::FetchFailed),
         };
+    }
+}
+
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub enum OperationState {
+    #[default]
+    Empty,
+    Pending,
+    Completed(StatusCode),
+}
+
+impl OperationState {
+    pub fn pending(&self) -> bool {
+        matches!(*self, Self::Pending)
+    }
+
+    pub fn completed(&self) -> bool {
+        matches!(*self, Self::Completed(status) if status.is_success())
+    }
+
+    pub fn error(&self) -> bool {
+        matches!(*self, Self::Completed(status) if status.is_failure())
+    }
+
+    pub fn status(&self) -> Option<StatusCode> {
+        if let Self::Completed(status) = self {
+            Some(*status)
+        } else {
+            None
+        }
+    }
+
+    #[inline]
+    pub fn not_completed(&self) -> bool {
+        !self.completed()
+    }
+
+    #[inline]
+    pub fn not_error(&self) -> bool {
+        !self.error()
     }
 }

@@ -22,7 +22,7 @@ use crate::{
 use super::{
     common::{PendingFetch, execute_fetch},
     request::Request,
-    transferstate::TransferState,
+    transferstate::{OperationState, TransferState},
 };
 
 pub struct EntityStore<E, MV = NoMac> {
@@ -117,6 +117,18 @@ impl<E, MV> EntityStore<E, MV> {
     }
 
     #[inline]
+    pub fn loaded_state(&self) -> OperationState {
+        self.transfer_state.get().as_load()
+    }
+
+    pub fn loaded_state_signal(&self) -> impl Signal<Item = OperationState> + use<E, MV> {
+        self.transfer_state
+            .signal()
+            .map(TransferState::as_load)
+            .dedupe()
+    }
+
+    #[inline]
     pub fn loaded_status(&self) -> Option<StatusCode> {
         self.transfer_state.map(TransferState::loaded_status)
     }
@@ -135,6 +147,18 @@ impl<E, MV> EntityStore<E, MV> {
     pub fn stored_signal(&self) -> impl Signal<Item = bool> + use<E, MV> {
         self.transfer_state
             .signal_ref(TransferState::stored)
+            .dedupe()
+    }
+
+    #[inline]
+    pub fn stored_state(&self) -> OperationState {
+        self.transfer_state.get().as_store()
+    }
+
+    pub fn stored_state_signal(&self) -> impl Signal<Item = OperationState> + use<E, MV> {
+        self.transfer_state
+            .signal()
+            .map(TransferState::as_load)
             .dedupe()
     }
 

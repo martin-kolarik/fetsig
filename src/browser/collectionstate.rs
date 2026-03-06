@@ -8,6 +8,7 @@ use futures_signals::{
 pub enum CollectionState {
     #[default]
     Empty,
+    Error,
     NotEmpty,
     Pending,
 }
@@ -19,6 +20,10 @@ impl CollectionState {
 
     pub fn empty_pending(&self) -> bool {
         matches!(*self, Self::Empty | Self::Pending)
+    }
+
+    pub fn error(&self) -> bool {
+        matches!(*self, Self::Error)
     }
 
     pub fn not_empty(&self) -> bool {
@@ -42,6 +47,7 @@ where
     map_ref!(
         cs1, cs2 => {
             match (cs1, cs2) {
+                (CollectionState::Error, _) | (_, CollectionState::Error) => CollectionState::Error,
                 (CollectionState::Pending, _) | (_, CollectionState::Pending) => CollectionState::Pending,
                 (CollectionState::NotEmpty, _) | (_, CollectionState::NotEmpty) => CollectionState::NotEmpty,
                 (CollectionState::Empty, CollectionState::Empty) => CollectionState::Empty,
@@ -63,6 +69,9 @@ where
     map_ref!(
         cs1, cs2, cs3 => {
             match (cs1, cs2, cs3) {
+                (CollectionState::Error, _, _)
+                | (_, CollectionState::Error, _)
+                | (_, _, CollectionState::Error) => CollectionState::Error,
                 (CollectionState::Pending, _, _)
                 | (_, CollectionState::Pending, _)
                 | (_, _, CollectionState::Pending) => CollectionState::Pending,

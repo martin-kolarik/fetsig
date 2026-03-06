@@ -26,7 +26,7 @@ use super::{
     CollectionState,
     common::{PendingFetch, execute_fetch},
     request::Request,
-    transferstate::TransferState,
+    transferstate::{OperationState, TransferState},
 };
 
 pub struct CollectionStore<E, MV = NoMac> {
@@ -92,6 +92,18 @@ impl<E, MV> CollectionStore<E, MV> {
     }
 
     #[inline]
+    pub fn loaded_state(&self) -> OperationState {
+        self.transfer_state.get().as_load()
+    }
+
+    pub fn loaded_state_signal(&self) -> impl Signal<Item = OperationState> + use<E, MV> {
+        self.transfer_state
+            .signal()
+            .map(TransferState::as_load)
+            .dedupe()
+    }
+
+    #[inline]
     pub fn loaded_status(&self) -> Option<StatusCode> {
         self.transfer_state.map(TransferState::loaded_status)
     }
@@ -110,6 +122,18 @@ impl<E, MV> CollectionStore<E, MV> {
     pub fn stored_signal(&self) -> impl Signal<Item = bool> + use<E, MV> {
         self.transfer_state
             .signal_ref(TransferState::stored)
+            .dedupe()
+    }
+
+    #[inline]
+    pub fn stored_state(&self) -> OperationState {
+        self.transfer_state.get().as_store()
+    }
+
+    pub fn stored_state_signal(&self) -> impl Signal<Item = OperationState> + use<E, MV> {
+        self.transfer_state
+            .signal()
+            .map(TransferState::as_store)
             .dedupe()
     }
 
@@ -230,7 +254,7 @@ where
     }
 
     pub fn collection_state_signal(&self) -> impl Signal<Item = CollectionState> + use<E, MV> {
-        collection_state_signal(self.pending_signal(), self.empty_signal())
+        collection_state_signal(self.loaded_state_signal(), self.empty_signal())
     }
 
     pub fn find<F>(&self, f: F) -> Option<E>
@@ -361,7 +385,7 @@ where
     pub fn collection_state_signal_cloned(
         &self,
     ) -> impl Signal<Item = CollectionState> + use<E, MV> {
-        collection_state_signal(self.pending_signal(), self.empty_signal_cloned())
+        collection_state_signal(self.loaded_state_signal(), self.empty_signal_cloned())
     }
 
     pub fn find_cloned<F>(&self, f: F) -> Option<E>
@@ -767,17 +791,19 @@ struct CollectionFetchContext<F> {
     store_fn: F,
 }
 
-pub fn collection_state_signal<P, E>(pending: P, empty: E) -> impl Signal<Item = CollectionState>
+pub fn collection_state_signal<O, E>(operation: O, empty: E) -> impl Signal<Item = CollectionState>
 where
-    P: Signal<Item = bool>,
+    O: Signal<Item = OperationState>,
     E: Signal<Item = bool>,
 {
     map_ref! {
-        pending, empty => {
-            match (pending, empty) {
-                (true, _) => CollectionState::Pending,
-                (false, true) => CollectionState::Empty,
-                (false, false) => CollectionState::NotEmpty,
+        operation, empty => {
+            match (operation, empty) {
+                (OperationState::Completed(status), false) if status.is_success() => CollectionState::NotEmpty,
+                (OperationState::Completed(status), true) if status.is_success() => CollectionState::Empty,
+                (OperationState::Pending, _) => CollectionState::Pending,
+                (OperationState::Empty, _) => CollectionState::Empty,
+                (OperationState::Completed(_), _) => CollectionState::Error,
             }
         }
     }
