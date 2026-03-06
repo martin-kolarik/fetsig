@@ -4,13 +4,15 @@ All notable changes to this project will be documented in this file. The
 format is based on [Keep a Changelog], and this project aims to follow
 [Semantic Versioning].
 
-## [0.27.0] - 2026-03-06
+## [0.27.0, 1] - 2026-03-06
 
 ### Changed
 
 - `TransferState` extended with `as_load`, `as_store`
 
 - `CollectionState` extended with `Error`
+
+- `collection_state_from_vec` removed
 
 ## [0.26.0] - 2026-03-04
 
