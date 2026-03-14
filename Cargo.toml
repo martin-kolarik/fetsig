@@ -1,6 +1,6 @@
 [package]
 name = "fetsig"
-version = "0.27.1"
+version = "0.27.2"
 authors = ["martin.kolarik@smartcontrol.cz"]
 description = "Web-sys based browser fetch library using futures-signals with optional MAC."
 edition = "2024"
@@ -30,7 +30,7 @@ futures-signals = { version = "^0.3", default-features = false, features = [
 #     "option",
 #     "spawn-local",
 # ] }
-futures-signals-ext = { version = "^0.12", default-features = false, features = [
+futures-signals-ext = { version = "^0.13", default-features = false, features = [
     "option",
     "spawn-local",
     "ahash",
