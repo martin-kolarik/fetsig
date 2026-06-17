@@ -7,7 +7,7 @@ use wasm_bindgen::JsValue;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{Headers, RequestInit};
 
-use crate::{HEADER_WANTS_RESPONSE, MediaType};
+use crate::{HEADER_ACCEPT, HEADER_CONTENT_TYPE, HEADER_WANTS_RESPONSE, MediaType};
 
 use super::{
     common::{Abort, PendingFetch},
@@ -40,9 +40,6 @@ impl Method {
         matches!(self, Self::Head | Self::Get | Self::Options)
     }
 }
-
-const HEADER_ACCEPT: &str = "Accept";
-const HEADER_CONTENT_TYPE: &str = "Content-Type";
 
 pub struct Request<'a> {
     logging: bool,

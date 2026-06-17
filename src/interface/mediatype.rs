@@ -162,3 +162,6 @@ impl<'de> Deserialize<'de> for MediaType {
         Ok(str.into())
     }
 }
+
+pub const HEADER_ACCEPT: &str = "Accept";
+pub const HEADER_CONTENT_TYPE: &str = "Content-Type";

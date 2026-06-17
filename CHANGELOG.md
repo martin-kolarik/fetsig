@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file. The
 format is based on [Keep a Changelog], and this project aims to follow
 [Semantic Versioning].
 
+## [0.27.3] - 2026-06-17
+
+- `HEADER_ACCEPT`, `HEADER_CONTENT_TYPE` headers moved
+
 ## [0.27.2] - 2026-03-14
 
 - `futures-signal-ext` version bumped up
