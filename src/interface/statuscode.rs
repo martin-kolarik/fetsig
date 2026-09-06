@@ -22,6 +22,7 @@ pub enum StatusCode {
     Conflict = 409,
     PayloadTooBig = 413,
     UnsupportedMediaType = 415,
+    UpgradeRequired = 426,
     RateLimited = 429,
 
     InternalServerError = 500,
@@ -70,6 +71,7 @@ impl From<u16> for StatusCode {
             409 => Self::Conflict,
             413 => Self::PayloadTooBig,
             415 => Self::UnsupportedMediaType,
+            426 => Self::UpgradeRequired,
             429 => Self::RateLimited,
             500 => Self::InternalServerError,
             501 => Self::NotImplemented,

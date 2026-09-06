@@ -172,6 +172,7 @@ where
         | StatusCode::Conflict
         | StatusCode::PayloadTooBig
         | StatusCode::RateLimited
+        | StatusCode::UpgradeRequired
         | StatusCode::Unauthorized => match decode_response::<R, MV>(status, response).await {
             Ok(result) => result,
             Err(result) => result,

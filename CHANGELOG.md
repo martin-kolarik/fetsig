@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file. The
 format is based on [Keep a Changelog], and this project aims to follow
 [Semantic Versioning].
 
+## [0.28] - 2026-09-06
+
+- `StatusCode::UpgradeRequired` added
+
 ## [0.27.5] - 2026-07-22
 
 - `futures-signal-ext` version bumped up
