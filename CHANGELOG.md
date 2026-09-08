@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file. The
 format is based on [Keep a Changelog], and this project aims to follow
 [Semantic Versioning].
 
+## [0.28.1] - 2026-09-08
+
+- `base64` version bumped up 
+
 ## [0.28] - 2026-09-06
 
 - `StatusCode::UpgradeRequired` added
