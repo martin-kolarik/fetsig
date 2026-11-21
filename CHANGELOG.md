@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file. The
 format is based on [Keep a Changelog], and this project aims to follow
 [Semantic Versioning].
 
+## [0.30, 0.30.1] - 2026-11-21
+
+- `EntityStore` and `CollectionStore` made cloneable
+
 ## [0.29] - 2026-11-21
 
 - `TransferState` made public

@@ -32,6 +32,17 @@ pub struct EntityStore<E, MV = NoMac> {
     pmv: PhantomData<MV>,
 }
 
+impl<E, MV> Clone for EntityStore<E, MV> {
+    fn clone(&self) -> Self {
+        Self {
+            transfer_state: self.transfer_state.clone(),
+            messages: self.messages.clone(),
+            entity: self.entity.clone(),
+            pmv: PhantomData,
+        }
+    }
+}
+
 impl<E, MV> EntityStore<E, MV> {
     pub fn new(entity: Option<E>) -> Self {
         Self {

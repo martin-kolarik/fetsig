@@ -37,6 +37,18 @@ pub struct CollectionStore<E, MV = NoMac> {
     pmv: PhantomData<MV>,
 }
 
+impl<E, MV> Clone for CollectionStore<E, MV> {
+    fn clone(&self) -> Self {
+        Self {
+            transfer_state: self.transfer_state.clone(),
+            messages: self.messages.clone(),
+            paging: self.paging.clone(),
+            collection: self.collection.clone(),
+            pmv: PhantomData,
+        }
+    }
+}
+
 impl<E, MV> CollectionStore<E, MV> {
     #[inline]
     pub fn new() -> Self {
