@@ -26,6 +26,7 @@ mod request;
 pub use request::*;
 
 mod transferstate;
+pub use transferstate::*;
 
 mod upload;
 pub use upload::*;

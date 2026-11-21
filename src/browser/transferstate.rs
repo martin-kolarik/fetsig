@@ -1,3 +1,5 @@
+use futures_signals::signal::{Mutable, Signal, SignalExt};
+
 use crate::StatusCode;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
@@ -127,4 +129,82 @@ impl OperationState {
     pub fn not_error(&self) -> bool {
         !self.error()
     }
+}
+
+#[inline]
+pub fn loaded(state: &Mutable<TransferState>) -> bool {
+    state.get().loaded()
+}
+
+#[inline]
+pub fn loaded_signal(state: &Mutable<TransferState>) -> impl Signal<Item = bool> + use<> {
+    state.signal_ref(TransferState::loaded).dedupe()
+}
+
+#[inline]
+pub fn loaded_status(state: &Mutable<TransferState>) -> Option<StatusCode> {
+    state.get().loaded_status()
+}
+
+#[inline]
+pub fn loaded_status_signal(
+    state: &Mutable<TransferState>,
+) -> impl Signal<Item = Option<StatusCode>> + use<> {
+    state.signal_ref(TransferState::loaded_status).dedupe()
+}
+
+#[inline]
+pub fn loaded_state(state: &Mutable<TransferState>) -> OperationState {
+    state.get().as_load()
+}
+
+#[inline]
+pub fn loaded_state_signal(
+    state: &Mutable<TransferState>,
+) -> impl Signal<Item = OperationState> + use<> {
+    state.signal().map(TransferState::as_load).dedupe()
+}
+
+#[inline]
+pub fn stored(state: &Mutable<TransferState>) -> bool {
+    state.get().stored()
+}
+
+#[inline]
+pub fn stored_signal(state: &Mutable<TransferState>) -> impl Signal<Item = bool> + use<> {
+    state.signal_ref(TransferState::stored).dedupe()
+}
+
+#[inline]
+pub fn stored_status(state: &Mutable<TransferState>) -> Option<StatusCode> {
+    state.get().stored_status()
+}
+
+#[inline]
+pub fn stored_status_signal(
+    state: &Mutable<TransferState>,
+) -> impl Signal<Item = Option<StatusCode>> + use<> {
+    state.signal_ref(TransferState::stored_status).dedupe()
+}
+
+#[inline]
+pub fn stored_state(state: &Mutable<TransferState>) -> OperationState {
+    state.get().as_store()
+}
+
+#[inline]
+pub fn stored_state_signal(
+    state: &Mutable<TransferState>,
+) -> impl Signal<Item = OperationState> + use<> {
+    state.signal().map(TransferState::as_store).dedupe()
+}
+
+#[inline]
+pub fn pending(state: &Mutable<TransferState>) -> bool {
+    state.get().pending()
+}
+
+#[inline]
+pub fn pending_signal(state: &Mutable<TransferState>) -> impl Signal<Item = bool> + use<> {
+    state.signal_ref(TransferState::pending).dedupe()
 }

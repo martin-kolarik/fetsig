@@ -22,7 +22,7 @@ use crate::{
 use super::{
     common::{PendingFetch, execute_fetch},
     request::Request,
-    transferstate::{OperationState, TransferState},
+    transferstate::{self, OperationState, TransferState},
 };
 
 pub struct EntityStore<E, MV = NoMac> {
@@ -107,81 +107,72 @@ impl<E, MV> EntityStore<E, MV> {
 
     #[inline]
     pub fn loaded(&self) -> bool {
-        self.transfer_state.map(TransferState::loaded)
+        transferstate::loaded(&self.transfer_state)
     }
 
+    #[inline]
     pub fn loaded_signal(&self) -> impl Signal<Item = bool> + use<E, MV> {
-        self.transfer_state
-            .signal_ref(TransferState::loaded)
-            .dedupe()
+        transferstate::loaded_signal(&self.transfer_state)
     }
 
     #[inline]
     pub fn loaded_state(&self) -> OperationState {
-        self.transfer_state.get().as_load()
+        transferstate::loaded_state(&self.transfer_state)
     }
 
+    #[inline]
     pub fn loaded_state_signal(&self) -> impl Signal<Item = OperationState> + use<E, MV> {
-        self.transfer_state
-            .signal()
-            .map(TransferState::as_load)
-            .dedupe()
+        transferstate::loaded_state_signal(&self.transfer_state)
     }
 
     #[inline]
     pub fn loaded_status(&self) -> Option<StatusCode> {
-        self.transfer_state.map(TransferState::loaded_status)
+        transferstate::loaded_status(&self.transfer_state)
     }
 
+    #[inline]
     pub fn loaded_status_signal(&self) -> impl Signal<Item = Option<StatusCode>> + use<E, MV> {
-        self.transfer_state
-            .signal_ref(TransferState::loaded_status)
-            .dedupe()
+        transferstate::loaded_status_signal(&self.transfer_state)
     }
 
     #[inline]
     pub fn stored(&self) -> bool {
-        self.transfer_state.map(TransferState::stored)
+        transferstate::stored(&self.transfer_state)
     }
 
+    #[inline]
     pub fn stored_signal(&self) -> impl Signal<Item = bool> + use<E, MV> {
-        self.transfer_state
-            .signal_ref(TransferState::stored)
-            .dedupe()
+        transferstate::stored_signal(&self.transfer_state)
     }
 
     #[inline]
     pub fn stored_state(&self) -> OperationState {
-        self.transfer_state.get().as_store()
+        transferstate::stored_state(&self.transfer_state)
     }
 
+    #[inline]
     pub fn stored_state_signal(&self) -> impl Signal<Item = OperationState> + use<E, MV> {
-        self.transfer_state
-            .signal()
-            .map(TransferState::as_load)
-            .dedupe()
+        transferstate::stored_state_signal(&self.transfer_state)
     }
 
     #[inline]
     pub fn stored_status(&self) -> Option<StatusCode> {
-        self.transfer_state.map(TransferState::stored_status)
+        transferstate::stored_status(&self.transfer_state)
     }
 
+    #[inline]
     pub fn stored_status_signal(&self) -> impl Signal<Item = Option<StatusCode>> + use<E, MV> {
-        self.transfer_state
-            .signal_ref(TransferState::stored_status)
-            .dedupe()
+        transferstate::stored_status_signal(&self.transfer_state)
     }
 
     #[inline]
     pub fn pending(&self) -> bool {
-        self.transfer_state.map(TransferState::pending)
+        transferstate::pending(&self.transfer_state)
     }
 
+    #[inline]
     pub fn pending_signal(&self) -> impl Signal<Item = bool> + use<E, MV> {
-        self.transfer_state
-            .signal_ref(TransferState::pending)
-            .dedupe()
+        transferstate::pending_signal(&self.transfer_state)
     }
 
     #[inline]

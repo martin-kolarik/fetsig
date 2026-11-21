@@ -1,12 +1,11 @@
 [package]
 name = "fetsig"
-version = "0.28.2"
+version = "0.29.0"
 authors = ["martin.kolarik@smartcontrol.cz"]
 description = "Web-sys based browser fetch library using futures-signals with optional MAC."
 edition = "2024"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/martin-kolarik/fetsig"
-homepage = "https://github.com/martin-kolarik/fetsig"
 rust-version = "1.91.0"
 
 [features]

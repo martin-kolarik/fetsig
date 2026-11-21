@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file. The
 format is based on [Keep a Changelog], and this project aims to follow
 [Semantic Versioning].
 
+## [0.29] - 2026-11-21
+
+- `TransferState` made public
+- functions operating `Mutable<TransferState>` added and exported
+
 ## [0.28.1] - 2026-09-08
 
 - `base64` version bumped up 
